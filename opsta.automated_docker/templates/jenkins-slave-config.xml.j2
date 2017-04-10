@@ -1,0 +1,55 @@
+      <com.nirima.jenkins.plugins.docker.DockerCloud plugin="docker-plugin@0.16.0">
+        <name>{{ automated_docker_jenkins_slave_cloud_name }}</name>
+        <templates>
+      {% for automated_docker_jenkins_slave_cloud in automated_docker_jenkins_slave_clouds %}
+          <com.nirima.jenkins.plugins.docker.DockerTemplate>
+            <configVersion>2</configVersion>
+            <labelString>{{ automated_docker_jenkins_slave_cloud.label }}</labelString>
+            <launcher class="com.nirima.jenkins.plugins.docker.launcher.DockerComputerSSHLauncher">
+              <sshConnector plugin="ssh-slaves@1.11">
+                <port>22</port>
+                <credentialsId>{{ automated_docker_jenkins_credential_master_name }}</credentialsId>
+                <jvmOptions></jvmOptions>
+                <javaPath></javaPath>
+                <maxNumRetries>0</maxNumRetries>
+                <retryWaitTime>0</retryWaitTime>
+              </sshConnector>
+            </launcher>
+            <remoteFsMapping></remoteFsMapping>
+            <remoteFs>/home/jenkins</remoteFs>
+            <instanceCap>2147483647</instanceCap>
+            <mode>EXCLUSIVE</mode>
+            <retentionStrategy class="com.nirima.jenkins.plugins.docker.strategy.DockerOnceRetentionStrategy">
+              <idleMinutes>10</idleMinutes>
+              <idleMinutes defined-in="com.nirima.jenkins.plugins.docker.strategy.DockerOnceRetentionStrategy">10</idleMinutes>
+            </retentionStrategy>
+            <numExecutors>1</numExecutors>
+            <dockerTemplateBase>
+              <image>{{ automated_docker_jenkins_slave_cloud.image }}</image>
+              <dockerCommand></dockerCommand>
+              <lxcConfString></lxcConfString>
+              <hostname></hostname>
+              <dnsHosts/>
+              <volumes/>
+              <volumesFrom2/>
+              <environment/>
+              <bindPorts></bindPorts>
+              <bindAllPorts>false</bindAllPorts>
+              <privileged>false</privileged>
+              <tty>false</tty>
+              <extraHosts class="java.util.Collections$UnmodifiableRandomAccessList" resolves-to="java.util.Collections$UnmodifiableList">
+                <c class="list"/>
+                <list reference="../c"/>
+              </extraHosts>
+            </dockerTemplateBase>
+            <removeVolumes>false</removeVolumes>
+            <pullStrategy>PULL_LATEST</pullStrategy>
+          </com.nirima.jenkins.plugins.docker.DockerTemplate>
+      {% endfor %}
+        </templates>
+        <serverUrl>{{ automated_docker_jenkins_slave_cloud_server_url }}</serverUrl>
+        <connectTimeout>0</connectTimeout>
+        <readTimeout>0</readTimeout>
+        <credentialsId>{{ group_names[1] }}</credentialsId>
+        <containerCap>100</containerCap>
+      </com.nirima.jenkins.plugins.docker.DockerCloud>

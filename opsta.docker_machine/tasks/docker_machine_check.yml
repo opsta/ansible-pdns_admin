@@ -1,0 +1,20 @@
+---
+- block: # Check and install Docker Machine
+  - name: Get version of Docker Machine
+    shell: docker-machine version | awk '{print substr($3, 1, length($3)-1)}'
+    delegate_to: 127.0.0.1
+    register: docker_machine_version
+
+  # TODO Find the way to check version and better way to install docker machine
+  # - name: Install Docker Machine if not installed
+  #   get_url:
+  #     url: "{{ docker_machine_install_url }}"
+  #     dest: "{{ docker_machine_install_path }}"
+  #     mode: 0755
+  #     force: yes
+  #   delegate_to: 127.0.0.1
+  #   become: true
+  #   when: docker_machine_version.stdout <= docker_machine_install_version
+
+  tags:
+    - docker-machine-install

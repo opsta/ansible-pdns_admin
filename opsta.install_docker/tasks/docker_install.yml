@@ -1,0 +1,15 @@
+---
+- block: # Install Docker
+  - name: Check if docker-engine is installed
+    command: dpkg-query -l docker-engine
+    failed_when: false
+    register: install_docker_package_check
+
+  # NOTE Change to use http apt so it can be cached with apt-cacher-ng
+  - name: Install Docker if not installed
+    shell: curl -sSL https://get.docker.com/ | sed 's#https://apt\.dockerproject\.org#http://apt.dockerproject.org#' | sh
+    when: install_docker_package_check.rc != 0
+    register: install_docker
+
+  tags:
+    - install-docker

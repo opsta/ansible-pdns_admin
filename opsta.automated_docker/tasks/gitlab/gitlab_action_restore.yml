@@ -1,0 +1,105 @@
+---
+# TODO Improve to support directory backup path and pick the latest backup file
+
+- block: # Get backup file from host
+
+  - name: Check backup file if exists
+    stat:
+      path: "{{ automated_docker_gitlab_action_restore_file_path }}"
+    register: automated_docker_gitlab_action_restore_is_file_exists
+    when: automated_docker_gitlab_action_restore_file_path is defined
+
+  - name: Fail when backup file is not exists
+    fail:
+      msg: "Backup file in {{ automated_docker_gitlab_action_restore_file_path }} does not exists"
+    when: |
+      automated_docker_gitlab_action_restore_file_path is defined and
+      not automated_docker_gitlab_action_restore_is_file_exists.stat.exists
+
+  - name: Get backup file name
+    set_fact:
+      automated_docker_gitlab_action_restore_file_name: "{{ automated_docker_gitlab_action_restore_is_file_exists.stat.path | basename }}"
+    when: automated_docker_gitlab_action_restore_file_path is defined
+
+  - name: Copy backup file
+    copy:
+      src: "{{ automated_docker_gitlab_action_restore_is_file_exists.stat.path }}"
+      dest: "{{ automated_docker_gitlab_action_backup_host_path }}/"
+    delegate_to: "{{ inventory_hostname }}"
+    when: automated_docker_gitlab_action_restore_file_path is defined
+
+- block: # Get backup file from Swift
+
+  - name: Get backup file name
+    set_fact:
+      automated_docker_gitlab_action_restore_file_name: "{{ automated_docker_gitlab_action_restore_swift_path | basename }}"
+    when: automated_docker_gitlab_action_restore_swift_path is defined
+
+  - name: Get backup file from Swift in utilities container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+      image: "{{ automated_docker_gitlab_action_backup_swift_utilities_image }}"
+      command: "swift download
+        --output {{ automated_docker_gitlab_action_backup_container_path }}/{{ automated_docker_gitlab_action_restore_file_name }}
+        {{ automated_docker_gitlab_action_restore_swift_container_name }}
+        {{ automated_docker_gitlab_action_restore_swift_path }}"
+      env: "{{ automated_docker_openstack_environment }}"
+      volumes:
+        - "{{ automated_docker_gitlab_action_backup_host_path }}:{{ automated_docker_gitlab_action_backup_container_path }}"
+      detach: false
+      state: started
+    when: automated_docker_gitlab_action_restore_swift_path is defined
+
+  - name: Remove utilities container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+      state: absent
+    when: automated_docker_gitlab_action_restore_swift_path is defined
+
+- block: # Restore GitLab data
+
+  - name: Stop current GitLab container
+    docker_container:
+      name: "{{ automated_docker_run.name }}"
+      state: stopped
+
+  - name: Restore container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_restore_container_name }}"
+      image: "{{ automated_docker_run.image }}"
+      command: "app:rake gitlab:backup:restore force=yes
+        BACKUP={{ automated_docker_gitlab_action_restore_file_name.split('_')[0] }}"
+      links: "{{ automated_docker_run.links | default(omit) }}"
+      env:
+        GITLAB_SECRETS_DB_KEY_BASE: "{{ automated_docker_run.env.GITLAB_SECRETS_DB_KEY_BASE }}"
+        GITLAB_SECRETS_OTP_KEY_BASE: "{{ automated_docker_run.env.GITLAB_SECRETS_OTP_KEY_BASE | default(omit) }}"
+        GITLAB_SECRETS_SECRET_KEY_BASE: "{{ automated_docker_run.env.GITLAB_SECRETS_SECRET_KEY_BASE | default(omit) }}"
+        GITLAB_BACKUP_DIR: "{{ automated_docker_gitlab_action_backup_container_path }}"
+      volumes:
+        - "{{ automated_docker_gitlab_action_backup_host_path }}:{{ automated_docker_gitlab_action_backup_container_path }}"
+      detach: false
+      volumes_from: "{{ automated_docker_run.name }}"
+      state: started
+
+  - name: Restore ssh host keys
+    command: "docker cp
+      {{ automated_docker_gitlab_action_backup_ssh_host_keys_host_path }}/.
+      {{ automated_docker_run.name }}:{{ automated_docker_gitlab_action_backup_ssh_host_keys_container_path }}"
+
+- block: # Cleaning
+
+  - name: Remove restore container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_restore_container_name }}"
+      state: absent
+
+  - name: Remove backup file
+    file:
+      path: "{{ automated_docker_gitlab_action_backup_host_path }}"
+      state: absent
+    when: automated_docker_gitlab_action_restore_file_path is defined
+
+  - name: Start current GitLab container
+    docker_container:
+      name: "{{ automated_docker_run.name }}"
+      state: started

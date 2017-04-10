@@ -1,0 +1,10 @@
+---
+install_docker_options: --live-restore --storage-driver overlay2
+
+install_docker_private_login: false
+#install_docker_registry_username: registry
+#install_docker_registry_password: CHANGEDOCKERPASSWORDHERE
+#install_docker_registry_email: docker@example.com
+#install_docker_registry_url: registry.example.com
+
+install_docker_py: false

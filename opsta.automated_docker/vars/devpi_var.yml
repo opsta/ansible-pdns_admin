@@ -1,0 +1,8 @@
+---
+automated_docker_container_default:
+  devpi:
+    image: winggundamth/devpi-server:xenial
+    name: devpi-server
+    hostname: devpi-server
+    published_ports:
+      - "3141:3141"

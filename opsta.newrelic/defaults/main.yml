@@ -1,0 +1,12 @@
+---
+newrelic_package_name: newrelic-sysmond
+newrelic_service_name: newrelic-sysmond
+newrelic_deb_repository: deb http://apt.newrelic.com/debian/ newrelic non-free
+newrelic_apt_key_url: https://download.newrelic.com/548C16BF.gpg
+newrelic_apt_key_id: 548C16BF
+newrelic_run_user: newrelic
+
+#newrelic_license_key: CHANGEME
+
+newrelic_docker_package_name: docker-engine
+newrelis_docker_group: docker

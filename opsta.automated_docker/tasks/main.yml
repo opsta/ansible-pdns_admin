@@ -1,0 +1,113 @@
+---
+# NOTE: Need to use ansible_python_interpreter: python to make it work with
+# docker-py on virtualenv on local machine
+
+- block: # Doing pre-check
+  - name: Pre-check state
+    include: pre_check.yml
+
+
+- block: # Looping disable this container from load balancer
+  - name: Get load balancer list from DNS-SD
+    set_fact:
+      automated_docker_lb_haproxy_backend: "{{ lookup('dig', automated_docker_lb_haproxy_srv_fqdn + '/SRV', 'flat=0', wantlist=True) }}"
+    when: |
+      automated_docker_lb_haproxy_name is defined and
+      automated_docker_lb_haproxy_domain_name is defined and
+      automated_docker_name != 'sensu_client' and
+      automated_docker_action is not defined
+
+  - name: Disable container from load balancer
+    include: lb_action.yml
+    vars:
+      ansible_python_interpreter: python
+      automated_docker_lb_action: disabled
+    with_items: "{{ automated_docker_lb_haproxy_backend | default([]) }}"
+    when: |
+      automated_docker_lb_haproxy_backend is defined and
+      automated_docker_lb_haproxy_backend is not none and
+      automated_docker_name != 'sensu_client' and
+      automated_docker_action is not defined
+    loop_control:
+      loop_var: automated_docker_lb_haproxy_host
+
+
+- block: # Loop to run containers
+  # TODO Find the better way to run dependency containers with multiple hierarchies
+  - name: Run all dependency Docker containers state
+    include: run.yml
+    vars:
+      ansible_python_interpreter: python
+    environment: "{{ automated_docker_machine_environment | default({}) }}"
+    with_dict: "{{ hostvars[inventory_hostname]['automated_docker_container_' + automated_docker_name] | default(automated_docker_container_default) }}"
+    when: |
+      automated_docker_container.value.links is not defined and
+      automated_docker_action is not defined and
+      (automated_docker_deploy_services is not defined or
+      (automated_docker_deploy_services is defined and
+      automated_docker_container.key in automated_docker_deploy_services))
+    loop_control:
+      loop_var: automated_docker_container
+  - name: Run main Docker containers state
+    include: run.yml
+    vars:
+      ansible_python_interpreter: python
+    environment: "{{ automated_docker_machine_environment | default({}) }}"
+    with_dict: "{{ hostvars[inventory_hostname]['automated_docker_container_' + automated_docker_name] | default(automated_docker_container_default) }}"
+    when: |
+      automated_docker_container.value.links is defined and
+      automated_docker_action is not defined and
+      (automated_docker_deploy_services is not defined or
+      (automated_docker_deploy_services is defined and
+      automated_docker_container.key in automated_docker_deploy_services))
+    loop_control:
+      loop_var: automated_docker_container
+
+
+- block: # Customize containers after ran
+  - name: Post containers configuration state
+    include: "{{ automated_docker_name }}/{{ automated_docker_name }}_config.yml"
+    when: |
+      automated_docker_has_post_config.stat.exists == true and
+      automated_docker_action is not defined
+
+
+- block: # Looping enable this container from load balancer
+  - name: Enable container from load balancer
+    include: lb_action.yml
+    vars:
+      ansible_python_interpreter: python
+      automated_docker_lb_action: enabled
+    with_items: "{{ automated_docker_lb_haproxy_backend | default([]) }}"
+    when: |
+      automated_docker_lb_haproxy_backend is defined and
+      automated_docker_lb_haproxy_backend is not none and
+      automated_docker_name != 'sensu_client' and
+      automated_docker_action is not defined
+    loop_control:
+      loop_var: automated_docker_lb_haproxy_host
+
+  - name: Remove utilities container
+    docker_container:
+      name: "{{ automated_docker_utilities_container_name }}"
+      state: absent
+    vars:
+      ansible_python_interpreter: python
+    environment: "{{ automated_docker_lb_haproxy_machine_environment }}"
+    when: |
+      automated_docker_lb_haproxy_backend is defined and
+      automated_docker_lb_haproxy_backend is not none and
+      automated_docker_name != 'sensu_client' and
+      automated_docker_action is not defined
+
+
+- block: # For custom action
+  - name: Run custom action
+    include: custom_action.yml
+    vars:
+      ansible_python_interpreter: python
+    environment: "{{ automated_docker_machine_environment | default({}) }}"
+    with_dict: "{{ hostvars[inventory_hostname]['automated_docker_container_' + automated_docker_name] | default(automated_docker_container_default) }}"
+    when: automated_docker_action is defined
+    loop_control:
+      loop_var: automated_docker_container

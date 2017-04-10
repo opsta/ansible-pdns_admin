@@ -1,0 +1,27 @@
+---
+- name: Remove tmp vault directory
+  file:
+    path: "{{ replace_vault_tmp_path }}"
+    state: absent
+
+- name: Clone vault repository
+  git:
+    repo: "{{ replace_vault_repository }}"
+    dest: "{{ replace_vault_tmp_path }}"
+    version: "{{ replace_vault_branch }}"
+    accept_hostkey: yes
+
+- name: Remove .git directory
+  file:
+    path: "{{ replace_vault_tmp_path }}/.git"
+    state: absent
+
+- name: Replace all vault files
+  synchronize:
+    src: "{{ replace_vault_tmp_path }}/."
+    dest: "{{ playbook_dir }}"
+
+- name: Remove temporary vault repository
+  file:
+    path: "{{ replace_vault_tmp_path }}"
+    state: absent

@@ -1,0 +1,22 @@
+---
+- block: # Copy configuration files
+  - name: Create json configuration file
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items: "{{ automated_docker_sensu_json_templates + automated_docker_sensu_client_json_templates }}"
+    notify: Restart container
+
+  - name: Copy json configuration to container
+    command: |
+      docker cp "{{ item.src }}" \
+      "{{ automated_docker_run.name }}":"{{ item.dest }}"
+    with_items: "{{ automated_docker_sensu_paths + automated_docker_sensu_client_paths }}"
+    notify: Restart container
+
+- block: # Delete temp files
+    - name: Delete temp json files
+      file:
+        path: "{{ item.src }}"
+        state: absent
+      with_items: "{{ automated_docker_sensu_paths + automated_docker_sensu_client_paths }}"

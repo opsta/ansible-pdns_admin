@@ -1,0 +1,4 @@
+---
+- include: docker_install.yml
+- include: docker_config.yml
+- include: docker_py_install.yml

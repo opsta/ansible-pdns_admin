@@ -1,0 +1,14 @@
+galaxy_info:
+  author: Jirayut Nimsaeng
+  description: Ansible role to install MariaDB and build master-slave
+  license: MIT
+  min_ansible_version: 2.0
+  platforms:
+  - name: Ubuntu
+    versions:
+    - trusty
+    - xenial
+  galaxy_tags:
+    - mariadb
+    - database
+dependencies: []

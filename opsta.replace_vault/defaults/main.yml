@@ -1,0 +1,4 @@
+---
+#replace_vault_repository: git@github.com:xxx/secret_vault.git
+replace_vault_tmp_path: /tmp/replace-vault
+replace_vault_branch: master

@@ -1,0 +1,8 @@
+---
+automated_docker_container_default:
+  redis:
+    image: redis:3.2.8-alpine
+    name: redis
+    hostname: redis
+    # published_ports:
+    #  - "6379:6379"

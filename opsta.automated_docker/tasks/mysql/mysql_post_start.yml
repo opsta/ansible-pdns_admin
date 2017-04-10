@@ -1,0 +1,44 @@
+---
+# NOTE Need to use docker command because mysql container doesn't has python installed
+# TODO Use utilities container instead of docker command
+
+- block: # Wait until mysql start finished
+
+  - name: Wait until MySQL container can connect
+    command: |
+      docker exec "{{ automated_docker_run.name }}" \
+      sh -c 'mysql -uroot \
+      -p"{{ automated_docker_run.env.MYSQL_ROOT_PASSWORD }}" \
+      -e ";" || true'
+    register: automated_docker_mysql_check_result
+    until: automated_docker_mysql_check_result.stderr.find("Can't connect to local MySQL server through socket") == -1
+    retries: 30
+    delay: 1
+
+  - name: Wait two more seconds
+    pause:
+      seconds: 2
+    when: automated_docker_create_result.changed
+
+- block: # Restore database
+
+  - name: Copy backup sql file
+    command: |
+      docker cp "{{ automated_docker_mysql_backup_file }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_mysql_container_backup_file }}"
+    when: automated_docker_mysql_backup_file is not none
+
+  - name: Restore database
+    command: |
+      docker exec "{{ automated_docker_run.name }}" \
+      sh -c 'mysql -uroot \
+      -p"{{ automated_docker_run.env.MYSQL_ROOT_PASSWORD }}" \
+      "{{ automated_docker_run.env.MYSQL_DATABASE }}" \
+      < "{{ automated_docker_mysql_container_backup_file }}"'
+    when: automated_docker_mysql_backup_file is not none
+
+  - name: Delete backup sql file
+    command: |
+      docker exec "{{ automated_docker_run.name }}" \
+      rm -f "{{ automated_docker_mysql_container_backup_file }}"
+    when: automated_docker_mysql_backup_file is not none

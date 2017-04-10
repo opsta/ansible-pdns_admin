@@ -1,0 +1,26 @@
+---
+automated_docker_container_default:
+  etherpad:
+    image: tvelocity/etherpad-lite:latest
+    name: "{{ automated_docker_etherpad_container_name }}"
+    hostname: "{{ automated_docker_etherpad_container_name }}"
+    links:
+      - "{{ automated_docker_etherpad_mariadb_container_name }}:mysql"
+    published_ports:
+      - "9001:9001"
+    env:
+      ETHERPAD_TITLE: Etherpad
+      ETHERPAD_ADMIN_PASSWORD: CHANGEME
+      ETHERPAD_ADMIN_USER: admin
+      ETHERPAD_DB_USER: "{{ automated_docker_etherpad_mariadb_container_username }}"
+      ETHERPAD_DB_PASSWORD: "{{ automated_docker_etherpad_mariadb_container_password }}"
+      ETHERPAD_DB_NAME: "{{ automated_docker_etherpad_mariadb_container_dbname }}"
+  mariadb:
+    image: mariadb:10.1.20
+    name: "{{ automated_docker_etherpad_mariadb_container_name }}"
+    hostname: "{{ automated_docker_etherpad_mariadb_container_name }}"
+    env:
+      MYSQL_ROOT_PASSWORD: CHANGEME
+      MYSQL_USER: "{{ automated_docker_etherpad_mariadb_container_username }}"
+      MYSQL_PASSWORD: "{{ automated_docker_etherpad_mariadb_container_password }}"
+      MYSQL_DATABASE: "{{ automated_docker_etherpad_mariadb_container_dbname }}"

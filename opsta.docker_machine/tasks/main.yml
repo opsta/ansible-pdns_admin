@@ -1,0 +1,9 @@
+---
+- include: docker_machine_manage_config.yml
+  when: docker_machine_manage_config
+- include: docker_machine_check.yml
+  when: docker_machine_create
+- include: docker_machine_create.yml
+  when: docker_machine_create
+  environment:
+    MACHINE_STORAGE_PATH: "{{ docker_machine_storage_path }}"

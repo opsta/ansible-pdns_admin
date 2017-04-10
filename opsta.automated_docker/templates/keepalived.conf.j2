@@ -1,0 +1,13 @@
+vrrp_instance {{ automated_docker_keepalived_instance }} {
+  state {{ (inventory_hostname.split('-')[-1] == '1') | ternary('MASTER', 'BACKUP') }}
+  interface {{ automated_docker_keepalived_interface }}
+  virtual_router_id 1
+  priority 100
+  authentication {
+    auth_type PASS
+    auth_pass {{ automated_docker_keepalived_auth_pass }}
+  }
+  virtual_ipaddress {
+    {{ automated_docker_keepalived_vip }}/32 dev {{ automated_docker_keepalived_interface }}
+  }
+}

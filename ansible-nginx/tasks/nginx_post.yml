@@ -1,0 +1,8 @@
+---
+- name: Copy nginx.cnf to root user
+  template:
+    src: nginx.conf.j2
+    dest: "{{ nginx_conf_filepath }}"
+    owner: root
+    group: root
+  notify: Restart Nginx Service

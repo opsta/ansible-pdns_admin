@@ -1,0 +1,15 @@
+---
+php_version: 7.1
+php_package_name: "php{{ php_version }}"
+php_main_packages:
+  - "{{ php_package_name }}"
+  - "{{ php_package_name }}-cli"
+php_extension_packages:
+  - "{{ php_package_name }}-mysql"
+  - "{{ php_package_name }}-mcrypt"
+
+php_deb_repository: ppa:ondrej/php
+
+php_apache_service_name: apache2
+php_apache_packages:
+  - apache2

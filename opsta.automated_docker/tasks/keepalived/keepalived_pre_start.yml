@@ -1,0 +1,33 @@
+---
+# NOTE Need to use docker command because docker registry image doesn't has python installed
+# TODO Use utilities container instead of docker command
+
+- block: # Enable kernel module
+
+  - name: Enable ip_vs in module file
+    lineinfile:
+      dest: /etc/modules
+      regexp: '^ip_vs$'
+      line: ip_vs
+    become: true
+    delegate_to: "{{ inventory_hostname }}"
+
+  - name: Enable ip_vs module
+    modprobe:
+      name: ip_vs
+      state: present
+    become: true
+    delegate_to: "{{ inventory_hostname }}"
+
+- block: # Copy Keepalived configuration file
+
+  - name: Create Keepalived configuration file
+    template:
+      src: "{{ automated_docker_keepalived_template_file }}"
+      dest: "{{ automated_docker_keepalived_host_tmp_config_path }}"
+
+  - name: Copy Keepalived configuration file to container
+    command: |
+      docker cp "{{ automated_docker_keepalived_host_tmp_config_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_keepalived_container_config_path }}"
+    notify: Restart container

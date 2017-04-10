@@ -1,0 +1,33 @@
+---
+- name: Check required variables
+  fail:
+    msg: "Variable 'automated_docker_name' is not defined"
+  when: item is not defined
+  with_items:
+    - "{{ automated_docker_name }}"
+
+- name: Get URL for DOCKER_HOST var
+  shell: docker-machine ls --filter="name=^{{ inventory_hostname }}$" | tail -n1 | awk '{ print $5 }'
+  register: automated_docker_host
+  when: inventory_hostname != 'localhost'
+  environment:
+    MACHINE_STORAGE_PATH: "{{ automated_docker_machine_storage_path }}"
+
+- name: Set docker-machine environment if not localhost
+  set_fact:
+    automated_docker_machine_environment: "{{ automated_docker_machine_environment_pre }}"
+  when: inventory_hostname != 'localhost'
+
+- name: Set Docker extra arguments variable
+  set_fact:
+    automated_docker_extra_args: --tlsverify --tlscacert="{{ automated_docker_cert_path }}/ca.pem" --tlscert="{{ automated_docker_cert_path }}/cert.pem" --tlskey="{{ automated_docker_cert_path }}/key.pem" -H="{{ automated_docker_host.stdout }}"
+  when: inventory_hostname != 'localhost'
+
+- name: Include docker container variables
+  include_vars: "{{ automated_docker_name }}_var.yml"
+
+- name: Check if has post container configuration tasks file
+  stat:
+    path: "{{ role_path }}/tasks/{{ automated_docker_name }}/{{ automated_docker_name }}_config.yml"
+    get_md5: no
+  register: automated_docker_has_post_config

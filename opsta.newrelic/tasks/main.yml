@@ -1,0 +1,4 @@
+---
+- include: newrelic_pre.yml
+- include: newrelic_install.yml
+- include: newrelic_post.yml

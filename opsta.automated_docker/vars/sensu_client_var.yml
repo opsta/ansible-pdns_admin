@@ -1,0 +1,12 @@
+---
+automated_docker_container_default:
+  sensu_client:
+    name: "sensu-client"
+    hostname: "sensu-client"
+    image: "opsta/sensu-client:xenial"
+    published_ports:
+      - "3030:3030"
+    volumes:
+      # Mount root volumes for check disk usage script
+      - "/:/rootfs:ro"
+      - "/etc/sensu"

@@ -1,0 +1,25 @@
+- name: Setup New Relic license
+  command: nrsysmond-config --set license_key="{{ newrelic_license_key }}"
+  notify: Restart New Relic Service
+  tags:
+    - newrelic-config
+    - newrelic-install
+
+- name: Check if docker-engine is installed
+  command: dpkg-query -l "{{ newrelic_docker_package_name }}"
+  failed_when: false
+  register: docker_package_check
+  tags:
+    - newrelic-config
+    - newrelic-install
+
+- name: Add New Relic user to docker group
+  user:
+    name: "{{ newrelic_run_user }}"
+    groups: "{{ newrelis_docker_group }}"
+    append: yes
+  when: docker_package_check.rc == 0
+  notify: Restart New Relic Service
+  tags:
+    - newrelic-config
+    - newrelic-install

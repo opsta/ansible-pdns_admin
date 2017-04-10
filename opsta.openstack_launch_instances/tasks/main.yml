@@ -1,0 +1,42 @@
+---
+# TODO Wait until this pull request has been merged so we can launch multiple
+# instances at the same time
+# https://github.com/ansible/ansible-modules-core/pull/4105
+# NOTE Need to use ansible_python_interpreter: python to make it work with
+# docker-py on virtualenv on local machine
+
+- name: Prepare state
+  include: prepare.yml
+
+- name: Launch instance(s) state
+  include: launch.yml
+  vars:
+    ansible_python_interpreter: python
+    os_instance_name: "{{ os_instance_loop }}"
+  environment:
+    OS_PROJECT_NAME: "{{ os_instance.project_name }}"
+  with_sequence: start=1 end="{{ os_instance.count }}" format="{{ os_instance_format_name }}"
+  loop_control:
+    loop_var: os_instance_loop
+
+- name: Wait for SSH to come up for all instance(s)
+  wait_for:
+    host: "{{ hostvars[item].ansible_host }}"
+    port: "{{ hostvars[item].ansible_port }}"
+    timeout: 60
+    search_regex: OpenSSH
+    state: started
+  with_items: "{{ groups['launched_openstack_instances'] }}"
+
+- name: Manage instances' volumes
+  include: volume.yml
+  with_items: "{{ os_instances }}"
+  loop_control:
+    loop_var: os_volumes_loop
+
+- name: Update PowerDNS records
+  include: pdns.yml
+  when: |
+    os_pdns_authoritative_server is defined and
+    os_pdns_domain is defined and
+    os_pdns_key_api is defined

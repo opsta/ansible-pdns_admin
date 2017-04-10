@@ -1,0 +1,15 @@
+---
+- block: # Prepare container variables
+  - name: Combine docker container variable
+    set_fact:
+      automated_docker_run: "{{ automated_docker_container_default[automated_docker_container.key] | default({}) | combine(automated_docker_container.value) }}"
+
+- block: # Include and run custom action
+  - name: Check if "{{ automated_docker_container.key }}" has custom action tasks file
+    stat:
+      path: "{{ automated_docker_action_custom_file_path }}"
+    register: automated_docker_action_has_custom_file
+
+  - name: Run "{{ automated_docker_container.key }}" custom action
+    include: "{{ automated_docker_action_custom_file_path }}"
+    when: automated_docker_action_has_custom_file.stat.exists

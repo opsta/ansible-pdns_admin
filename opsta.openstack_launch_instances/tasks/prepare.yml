@@ -1,0 +1,13 @@
+---
+- block: # Add localhost to group that will assign to instances to get the same variables
+
+  - name: Get group
+    set_fact:
+      os_host_groups: "{{ os_instance.groups.split(',') }}"
+    when: os_instance.groups is defined
+
+  - name: Add localhost to group that assign to instance
+    add_host:
+      name: "{{ inventory_hostname }}"
+      groups: "{{ item }}"
+    with_items: "{{ os_host_groups | default([]) }}"

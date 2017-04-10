@@ -1,0 +1,31 @@
+---
+- block: # Setup backup cron
+
+  - name: Setup cron job to upload backup file to Swift
+    cron:
+      name: Upload GitLab backup files to Swift
+      month: "{{ automated_docker_gitlab_cron_month }}"
+      weekday: "{{ automated_docker_gitlab_cron_weekday }}"
+      day: "{{ automated_docker_gitlab_cron_day }}"
+      hour: "{{ automated_docker_gitlab_cron_hour }}"
+      minute: "{{ automated_docker_gitlab_cron_minute }}"
+      job: "docker run
+        -e OS_USERNAME={{ automated_docker_gitlab_cron_swift_username }}
+        -e OS_PASSWORD={{ automated_docker_gitlab_cron_swift_password }}
+        -e OS_PROJECT_NAME={{ automated_docker_gitlab_cron_swift_project }}
+        -e OS_AUTH_URL={{ automated_docker_gitlab_cron_swift_authurl }}
+        -e OS_USER_DOMAIN_NAME={{ automated_docker_gitlab_cron_swift_domain }}
+        -e OS_DOMAIN_NAME={{ automated_docker_gitlab_cron_swift_domain }}
+        -e OS_PROJECT_DOMAIN_NAME={{ automated_docker_gitlab_cron_swift_domain }}
+        -e OS_IDENTITY_API_VERSION=3
+        --volumes-from {{ automated_docker_gitlab_container_name }}
+        --name {{ automated_docker_gitlab_cron_swift_utilities_container_name }}
+        --rm=true {{ automated_docker_gitlab_cron_swift_utilities_image }}
+        {{ automated_docker_gitlab_cron_swift_command }}
+        {{ automated_docker_gitlab_cron_swift_container }}
+        {{ automated_docker_gitlab_cron_swift_container_backup_path }}"
+    delegate_to: "{{ inventory_hostname }}"
+    when: |
+      automated_docker_gitlab_cron_swift_username is defined and
+      automated_docker_gitlab_cron_swift_password is defined and
+      automated_docker_gitlab_cron_swift_authurl is defined

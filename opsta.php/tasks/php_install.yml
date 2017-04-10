@@ -1,0 +1,10 @@
+---
+- name: Install Apache2 and PHP version {{ php_version }}
+  apt:
+     pkg: "{{ item }}"
+     state: latest
+     update_cache: yes
+  with_items:
+    - "{{ php_apache_packages }}"
+    - "{{ php_main_packages }}"
+    - "{{ php_extension_packages }}"

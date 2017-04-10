@@ -1,0 +1,29 @@
+---
+# NOTE Need to use docker command because docker registry image doesn't has python installed
+# TODO Use utilities container instead of docker command
+
+- block: # Copy GitLab certificate file
+
+  - name: Copy gitlab registry key file
+    command: |
+      docker cp "{{ automated_docker_gitlab_registry_key_file_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_run.env.GITLAB_REGISTRY_KEY_PATH }}"
+    when: |
+      automated_docker_run.env.GITLAB_REGISTRY_KEY_PATH is defined
+    notify: Restart container
+
+  - name: Copy gitlab registry ssl certificate file
+    command: |
+      docker cp "{{ automated_docker_gitlab_registry_ssl_crt_file_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_run.env.SSL_REGISTRY_CERT_PATH }}"
+    when: |
+      automated_docker_run.env.SSL_REGISTRY_CERT_PATH is defined
+    notify: Restart container
+
+  - name: Copy gitlab registry ssl key file
+    command: |
+      docker cp "{{ automated_docker_gitlab_registry_ssl_key_file_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_run.env.SSL_REGISTRY_KEY_PATH }}"
+    when: |
+      automated_docker_run.env.SSL_REGISTRY_KEY_PATH is defined
+    notify: Restart container

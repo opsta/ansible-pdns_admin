@@ -1,0 +1,8 @@
+---
+automated_docker_container_default:
+  rabbitmq:
+    name: "rabbitmq"
+    hostname: "rabbitmq"
+    image: "rabbitmq:3.6.6-management"
+    env:
+      RABBITMQ_DEFAULT_VHOST: my_vhost

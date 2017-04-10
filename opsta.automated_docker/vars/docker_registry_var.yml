@@ -1,0 +1,20 @@
+---
+automated_docker_container_default:
+  docker_registry:
+    image: registry:2.6.0
+    name: docker-registry
+    hostname: docker-registry
+    published_ports:
+      - "5000:5000"
+    volumes:
+      - /var/lib/registry
+      - /etc/docker/registry
+    # env:
+    #   REGISTRY_PROXY_REMOTEURL: https://registry-1.docker.io
+    #docker_registry_container_environment_config:
+    #  SETTINGS_FLAVOR: s3
+    #  AWS_BUCKET: acme-docker
+    #  STORAGE_PATH: /registry
+    #  AWS_KEY: CHANGEME
+    #  AWS_SECRET: CHANGEME
+    #  SEARCH_BACKEND: sqlalchemy

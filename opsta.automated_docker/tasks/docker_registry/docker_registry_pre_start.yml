@@ -1,0 +1,58 @@
+---
+# NOTE Need to use docker command because docker registry image doesn't has python installed
+# TODO Use utilities container instead of docker command
+
+- block: # Check and register for docker registry configuration file
+
+  - name: Set list of path to look for docker registry configuration file
+    set_fact:
+      automated_docker_registry_host_config_file_paths: "{{ automated_docker_registry_host_config_file_paths }} + [ '{{ automated_docker_registry_host_config_file_path }}' ]"
+    with_items: "{{ group_names }}"
+
+  - name: Check if docker registry configuration file is exists
+    stat:
+      path: "{{ item }}"
+    register: automated_docker_registry_config_check
+    with_first_found:
+      - files: "{{ automated_docker_registry_host_config_file_paths }}"
+        skip: true
+  - name: Set docker registry configuration file path
+    set_fact:
+      automated_docker_registry_config_stat: "{{ automated_docker_registry_config_check.results[0].stat }}"
+    when: automated_docker_registry_config_check.results[0].stat is defined
+
+
+- block: # Copy docker registry configuration and certificate file
+
+  - name: Copy docker registry configuration
+    command: |
+      docker cp "{{ automated_docker_registry_config_stat.path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_registry_container_config_file_path }}"
+    when: |
+      automated_docker_registry_config_stat is defined and
+      automated_docker_registry_config_stat.exists
+    notify: Restart container
+
+  - name: Download default docker registry configuration file
+    get_url:
+      url: "{{ automated_docker_registry_config_example_url }}"
+      dest: "{{ automated_docker_registry_config_example_tmp_path }}"
+    when: |
+      automated_docker_registry_config_stat is not defined or
+      not automated_docker_registry_config_stat.exists
+
+  - name: Revert docker registry configuration to default if no configuration to apply
+    shell: |
+      docker cp "{{ automated_docker_registry_config_example_tmp_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_registry_container_config_file_path }}"
+    when: |
+      automated_docker_registry_config_stat is not defined or
+      not automated_docker_registry_config_stat.exists
+    notify: Restart container
+
+  - name: Copy docker registry auth token certificate
+    command: |
+      docker cp "{{ automated_docker_registry_host_auth_token_rootcertbundle_file_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_run.env.REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE }}"
+    when: automated_docker_run.env.REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE is defined
+    notify: Restart container

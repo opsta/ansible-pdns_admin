@@ -1,0 +1,299 @@
+---
+#automated_docker_name: sample-image
+#autoamted_docker_action: backup
+automated_docker_action_custom_file_path: "{{ role_path }}/tasks/{{ automated_docker_name }}/{{ automated_docker_container.key }}_action_{{ automated_docker_action }}.yml"
+automated_docker_machine_storage_path: "{{ playbook_dir }}/files/docker-machine"
+automated_docker_cert_path: "{{ automated_docker_machine_storage_path }}/machines/{{ inventory_hostname }}"
+automated_docker_machine_environment_pre:
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_HOST: "{{ automated_docker_host.stdout }}"
+  DOCKER_CERT_PATH: "{{ automated_docker_cert_path }}"
+  DOCKER_MACHINE_NAME: "{{ inventory_hostname }}"
+
+automated_docker_search_config_path: "{{ playbook_dir }}/files/groups/{{ item }}/{{ automated_docker_container.key }}"
+automated_docker_search_config_paths: []
+
+automated_docker_openstack_environment:
+  CINDER_ENDPOINT_TYPE: "{{ lookup('env','CINDER_ENDPOINT_TYPE') | default(omit) }}"
+  NOVA_ENDPOINT_TYPE: "{{ lookup('env','NOVA_ENDPOINT_TYPE') | default(omit) }}"
+  OS_ENDPOINT_TYPE: "{{ lookup('env','OS_ENDPOINT_TYPE') | default(omit) }}"
+  OS_USERNAME: "{{ lookup('env','OS_USERNAME') | default(omit) }}"
+  OS_PASSWORD: "{{ lookup('env','OS_PASSWORD') | default(omit) }}"
+  OS_PROJECT_NAME: "{{ lookup('env','OS_PROJECT_NAME') | default(omit) }}"
+  OS_TENANT_NAME: "{{ lookup('env','OS_TENANT_NAME') | default(omit) }}"
+  OS_AUTH_URL: "{{ lookup('env','OS_AUTH_URL') | default(omit) }}"
+  OS_NO_CACHE: "{{ lookup('env','OS_NO_CACHE') | default(omit) }}"
+  OS_USER_DOMAIN_NAME: "{{ lookup('env','OS_USER_DOMAIN_NAME') | default(omit) }}"
+  OS_PROJECT_DOMAIN_NAME: "{{ lookup('env','OS_PROJECT_DOMAIN_NAME') | default(omit) }}"
+  OS_IDENTITY_API_VERSION: "{{ lookup('env','OS_IDENTITY_API_VERSION') | default(omit) }}"
+  OS_AUTH_VERSION: "{{ lookup('env','OS_AUTH_VERSION') | default(omit) }}"
+
+# Default variables for docker utilities image
+automated_docker_utilities_image_pull: no
+automated_docker_utilities_image: opsta/utilities:1.0-xenial-20160818
+automated_docker_utilities_container_name: "{{ automated_docker_run.name }}-utilities"
+
+# Default variables for load balancer
+automated_docker_lb_haproxy_backend_name: "{{ service_name }}-back"
+automated_docker_lb_haproxy_socket_path: /usr/local/etc/haproxy/haproxy.sock
+automated_docker_lb_haproxy_srv_fqdn: "{{ automated_docker_lb_haproxy_name }}._http._tcp.{{ automated_docker_lb_haproxy_domain_name }}."
+automated_docker_lb_utilities_container_name: haproxy-utilities
+automated_docker_lb_utilities_image: "{{ automated_docker_utilities_image }}"
+automated_docker_lb_utilities_image_pull: "{{ automated_docker_utilities_image_pull }}"
+automated_docker_lb_haproxy_machine_environment:
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_HOST: "{{ automated_docker_lb_haproxy_ip.stdout }}"
+  DOCKER_CERT_PATH: "{{ automated_docker_machine_storage_path }}/machines/{{ automated_docker_lb_haproxy_hostname }}"
+  DOCKER_MACHINE_NAME: "{{ automated_docker_lb_haproxy_hostname }}"
+
+# Default docker run variables
+automated_docker_container_default_pull: no
+automated_docker_container_default_restart_policy: unless-stopped
+automated_docker_container_default_recreate: no
+
+# NOTE All default variables for each container still need to be all in here
+# https://github.com/ansible/ansible/issues/14248
+# Until this PR has been implemented
+# https://github.com/ansible/proposals/pull/21
+
+
+# Default variables for Nginx
+automated_docker_nginx_host_config_file_path: "{{ automated_docker_host_config_path | default('') }}/nginx.conf"
+automated_docker_nginx_config_path: /etc/nginx
+automated_docker_nginx_config_backup_path: /etc/nginx.bak
+
+
+# Default variables for Graylog
+automated_docker_graylog_container_name: graylog
+automated_docker_graylog_mongo_container_name: graylog-mongo
+automated_docker_graylog_elasticsearch_container_name: graylog-elasticsearch
+automated_docker_graylog_elasticsearch_cluster_name: graylog
+
+
+# Default variables for MariaDB
+automated_docker_mariadb_backup_file:
+automated_docker_mariadb_container_backup_file: /tmp/backup.sql
+
+
+# Default variables for MySQL
+automated_docker_mysql_backup_file: mysql
+automated_docker_mysql_container_backup_file: /tmp/backup.sql
+
+
+# Default variables for Etherpad
+automated_docker_etherpad_container_name: etherpad
+automated_docker_etherpad_mariadb_container_name: etherpad-mariadb
+automated_docker_etherpad_mariadb_container_username: etherpad
+automated_docker_etherpad_mariadb_container_password: CHANGEME
+automated_docker_etherpad_mariadb_container_dbname: etherpad
+
+
+# Default variables for Docker Registry
+automated_docker_registry_host_config_file_path: "{{ playbook_dir }}/files/groups/{{ item }}/{{ automated_docker_container.key }}/config.yml"
+automated_docker_registry_host_config_file_paths: []
+automated_docker_registry_container_config_file_path: /etc/docker/registry/config.yml
+automated_docker_registry_host_auth_token_rootcertbundle_file_path: "{{ role_path }}/files/gitlab/registry-auth.crt"
+automated_docker_registry_config_example_url: https://raw.githubusercontent.com/docker/distribution-library-image/master/registry/config-example.yml
+automated_docker_registry_config_example_tmp_path: /tmp/docker-registry-config-example.yml
+
+
+# Default variables for GitLab
+automated_docker_gitlab_container_name: gitlab
+automated_docker_gitlab_postgresql_container_name: gitlab-postgresql
+automated_docker_gitlab_redis_container_name: gitlab-redis
+automated_docker_gitlab_registry_container_name: gitlab-registry
+automated_docker_gitlab_registry_key_file_path: "{{ role_path }}/files/gitlab/registry-auth.key"
+automated_docker_gitlab_registry_ssl_key_file_path: "{{ role_path }}/files/gitlab/registry-auth.key"
+automated_docker_gitlab_registry_ssl_crt_file_path: "{{ role_path }}/files/gitlab/registry-auth.crt"
+automated_docker_gitlab_cron_minute: "0"
+automated_docker_gitlab_cron_hour: "2"
+automated_docker_gitlab_cron_day: "*"
+automated_docker_gitlab_cron_weekday: "*"
+automated_docker_gitlab_cron_month: "*"
+# Support v3 only for now
+automated_docker_gitlab_cron_swift_domain: Default
+# automated_docker_gitlab_cron_swift_username: admin
+# automated_docker_gitlab_cron_swift_password: CHANGEME
+# automated_docker_gitlab_cron_swift_authurl: https://keystone.example.com/v3
+automated_docker_gitlab_cron_swift_project: admin
+automated_docker_gitlab_cron_swift_container: backup-gitlab
+automated_docker_gitlab_cron_swift_command: swift upload -c --skip-identical --object-name /
+automated_docker_gitlab_cron_swift_utilities_image: "{{ automated_docker_utilities_image }}"
+automated_docker_gitlab_cron_swift_utilities_container_name: "{{ automated_docker_utilities_container_name }}"
+automated_docker_gitlab_cron_swift_container_backup_path: /home/git/data/backups/
+
+# Default variables for GitLab Backup Action
+automated_docker_gitlab_action_backup_host_path: /tmp/gitlab-backups
+automated_docker_gitlab_action_backup_target_host_path: "{{ automated_docker_gitlab_action_backup_target_path }}/{{ automated_docker_run.name }}"
+automated_docker_gitlab_action_backup_ssh_host_keys_container_path: /home/git/data/ssh
+automated_docker_gitlab_action_backup_ssh_host_keys_host_path: "{{ automated_docker_gitlab_action_backup_target_host_path }}/ssh_host_keys"
+automated_docker_gitlab_action_backup_container_path: /backups
+automated_docker_gitlab_action_backup_container_name: "{{ automated_docker_run.name }}-backup"
+# Upload backup file to host where run Ansible
+automated_docker_gitlab_action_backup_to_host: false
+automated_docker_gitlab_action_backup_target_path: "{{ playbook_dir }}"
+# Upload backup file to Swift
+automated_docker_gitlab_action_backup_to_swift: false
+automated_docker_gitlab_action_backup_swift_utilities_image: "{{ automated_docker_utilities_image }}"
+automated_docker_gitlab_action_backup_swift_utilities_container_name: "{{ automated_docker_utilities_container_name }}"
+automated_docker_gitlab_action_backup_swift_container_name: backups
+automated_docker_gitlab_action_backup_swift_folder: gitlab
+
+# Default variables for GitLab Restore Action
+automated_docker_gitlab_action_restore_container_name: "{{ automated_docker_run.name }}-restore"
+automated_docker_gitlab_action_restore_swift_container_name: backups
+#automated_docker_gitlab_action_restore_file_path: "{{ playbook_dir }}/gitlab-container/1469319388_gitlab_backup.tar"
+#automated_docker_gitlab_action_restore_swift_path: "gitlab/1469319388_gitlab_backup.tar"
+
+
+# Default variables for HAProxy
+automated_docker_haproxy_template_file: haproxy.cfg.j2
+automated_docker_haproxy_host_tmp_config_path: /tmp/container-haproxy.cfg
+automated_docker_haproxy_container_config_path: /usr/local/etc/haproxy/haproxy.cfg
+automated_docker_haproxy_container_cert_path: /etc/ssl
+automated_docker_haproxy_syslog_server: 127.0.0.1
+automated_docker_haproxy_srv_fqdn: "{{ automated_docker_haproxy_service_name }}._http._tcp.{{ automated_docker_haproxy_domain_name }}."
+automated_docker_haproxy_balance: source
+automated_docker_haproxy_check_rise: 2
+automated_docker_haproxy_check_fall: 3
+automated_docker_haproxy_check_interval: 2000
+automated_docker_haproxy_stats_username: haproxy
+automated_docker_haproxy_stats_password: CHANGEME
+automated_docker_haproxy_forward_http: false
+automated_docker_haproxy_ssl_certificate_path: "{{ playbook_dir }}/files/groups/{{ item }}/{{ automated_docker_container.key }}"
+automated_docker_haproxy_ssl_certificate_paths: []
+automated_docker_haproxy_backend_name: "{{ automated_docker_haproxy_service_name }}-back"
+#automated_docker_haproxy_ssl_certificate_pem_file: example.org.pem
+#automated_docker_haproxy_virtual_hosts:
+#  - example.com
+#  - example.org
+#automated_docker_haproxy_service_name: service-test
+#automated_docker_haproxy_domain_name: example.org
+
+
+# Default variables for Keepalived
+automated_docker_keepalived_template_file: keepalived.conf.j2
+automated_docker_keepalived_host_tmp_config_path: /tmp/container-keepalived.conf
+automated_docker_keepalived_container_config_path: /etc/keepalived/keepalived.conf
+automated_docker_keepalived_instance: haproxy-test
+automated_docker_keepalived_auth_pass: CHANGEME
+automated_docker_keepalived_interface: eth0
+automated_docker_keepalived_vip: 192.168.1.1
+
+
+# Default variables for Jenkins
+automated_docker_jenkins_utilities_image: "{{ automated_docker_utilities_image }}"
+automated_docker_jenkins_utilities_container_name: "{{ automated_docker_utilities_container_name }}"
+automated_docker_jenkins_home_path: /var/jenkins_home
+automated_docker_jenkins_check_file_path: "{{ automated_docker_jenkins_home_path }}/jenkins.install.UpgradeWizard.state"
+automated_docker_jenkins_unlock_file_path: "{{ automated_docker_jenkins_home_path }}/jenkins.install.InstallUtil.lastExecVersion"
+automated_docker_jenkins_cli_path: "{{ automated_docker_jenkins_home_path }}/war/WEB-INF/jenkins-cli.jar"
+automated_docker_jenkins_cli_command: java -jar {{ automated_docker_jenkins_cli_path }} -s http://127.0.0.1:8080
+automated_docker_jenkins_cli_password_parameter: "--password-file {{ automated_docker_jenkins_home_path }}/secrets/initialAdminPassword"
+automated_docker_jenkins_cli_authen_parameter: "--username {{ automated_docker_jenkins_admin_username }} {{ automated_docker_jenkins_cli_password_parameter }}"
+automated_docker_jenkins_test_start_command: "{{ automated_docker_jenkins_cli_command }} login {{ automated_docker_jenkins_cli_authen_parameter }}"
+automated_docker_jenkins_install_plugins:
+  - workflow-aggregator
+  - git
+automated_docker_jenkins_admin_username: admin
+automated_docker_jenkins_admin_password_salt: JENKINS
+automated_docker_jenkins_admin_password: CHANGEME
+# Use when changing password only
+# automated_docker_jenkins_old_admin_password: CHANGEME
+
+# Jenkins config file configuration
+automated_docker_jenkins_config_files_list:
+  - config.xml
+  - credentials.xml
+automated_docker_jenkins_templates_path: "{{ role_path }}/templates"
+automated_docker_jenkins_host_config_file_path: "{{ playbook_dir }}/files/groups/{{ item }}/{{ automated_docker_container.key }}/jenkins-{{ automated_docker_jenkins_config_filename }}.j2"
+automated_docker_jenkins_host_config_file_paths: []
+automated_docker_jenkins_container_config_file_path: "{{ automated_docker_jenkins_home_path }}/{{ automated_docker_jenkins_config_filename }}"
+automated_docker_jenkins_host_tmp_config_path: "/tmp/container-jenkins-{{ automated_docker_jenkins_config_filename }}"
+
+# Jenkins ssh key configuration
+automated_docker_jenkins_host_sshkey_path: "{{ playbook_dir }}/files/groups/{{ item }}/{{ automated_docker_container.key }}/id_rsa"
+automated_docker_jenkins_host_sshkey_paths: []
+automated_docker_jenkins_container_sshkey_path: "{{ automated_docker_jenkins_home_path }}/.ssh/id_rsa"
+
+# Jenkins Docker configuration
+automated_docker_jenkins_docker_version: 1.11.2
+automated_docker_jenkins_docker_client_url: "https://get.docker.com/builds/Linux/x86_64/docker-{{ automated_docker_jenkins_docker_version }}.tgz"
+automated_docker_jenkins_docker_bin_path: /usr/local/bin
+automated_docker_jenkins_docker_socket_path: /var/run/docker.sock
+automated_docker_jenkins_home: /var/jenkins_home
+automated_docker_jenkins_ssh_key_file_path: "{{ automated_docker_jenkins_home }}/.ssh/id_rsa"
+automated_docker_jenkins_ssh_key_host_path: "{{ playbook_dir }}/files/groups/{{ group_names[1] }}/jenkins/ssh"
+automated_docker_jenkins_credential_master_name: jenkins-ssh-master
+automated_docker_jenkins_slave_clouds:
+  name: Jenkin Master
+  label: all
+  image: winggundamth/ubuntu-jenkins-slave
+automated_docker_jenkins_slave_cloud_server_url: unix:///var/run/docker.sock
+
+# Default variables for Jenkins Slave Docker Cloud Action
+automated_docker_jenkins_master_cert_path: "{{ automated_docker_machine_storage_path }}/machines/{{ automated_docker_jenkins_master_host_name }}"
+automated_docker_jenkins_master_container_slave_base_cert_path: "{{ automated_docker_jenkins_home }}/cloud-docker-certs"
+automated_docker_jenkins_master_container_slave_cert_path: "{{ automated_docker_jenkins_master_container_slave_base_cert_path }}/{{ inventory_hostname }}"
+automated_docker_jenkins_master_host_tmp_config_path: "/tmp/container-jenkins-master-{{ automated_docker_jenkins_config_filename }}"
+automated_docker_jenkins_master_templates_path: "{{ automated_docker_jenkins_templates_path }}/jenkins-slave-{{ automated_docker_jenkins_config_filename }}.j2"
+automated_docker_jenkins_master_templates_tmp_path: "/tmp/container-jenkins-slave-{{ automated_docker_jenkins_config_filename }}"
+
+# Default variables for Sensu
+automated_docker_sensu_rabbitmq_host: rabbitmq
+automated_docker_sensu_rabbitmq_vhost: /sensu
+automated_docker_sensu_rabbitmq_username: sensu
+automated_docker_sensu_rabbitmq_password: CHANGEME
+automated_docker_sensu_json_templates:
+  - src: "sensu-config.json.j2"
+    dest: "{{ automated_docker_sensu_host_tmp_config_path }}/container-{{ inventory_hostname }}-sensu-config.json"
+automated_docker_sensu_paths:
+  - src: "{{ automated_docker_sensu_host_tmp_config_path }}/container-{{ inventory_hostname }}-sensu-config.json"
+    dest: "{{ automated_docker_sensu_container_config_path }}/config.json"
+automated_docker_sensu_host_tmp_config_path: /tmp
+automated_docker_sensu_container_config_path: /etc/sensu
+
+# Default variables for Sensu Server
+automated_docker_sensu_server_redis_host: redis
+automated_docker_sensu_server_api_host: sensu-api
+automated_docker_sensu_server_api_port: 4567
+
+# Default variables for Sensu Client
+automated_docker_sensu_client_name: "{{ inventory_hostname }}"
+automated_docker_sensu_client_subscriptions:
+  - application
+  - service
+automated_docker_sensu_client_subscriptions_joined: "\"{{ '\", \"'.join(automated_docker_sensu_client_subscriptions)}}\""
+automated_docker_sensu_client_json_templates:
+  - src: "sensu-client.json.j2"
+    dest: "{{ automated_docker_sensu_host_tmp_config_path }}/container-{{ inventory_hostname }}-sensu-client.json"
+automated_docker_sensu_client_paths:
+  - src: "{{ automated_docker_sensu_host_tmp_config_path }}/container-{{ inventory_hostname }}-sensu-client.json"
+    dest: "{{ automated_docker_sensu_container_config_path }}/conf.d/client.json"
+
+# Default variables for Sensu Uchiwa
+automated_docker_sensu_uchiwa_name: Site 1
+automated_docker_sensu_uchiwa_host: 172.17.0.1
+automated_docker_sensu_uchiwa_port: 4567
+automated_docker_sensu_uchiwa_json_templates:
+  - src: "sensu-uchiwa.json.j2"
+    dest: "{{ automated_docker_sensu_host_tmp_config_path }}/container-{{ inventory_hostname }}-sensu-uchiwa.json"
+automated_docker_sensu_uchiwa_paths:
+  - src: "{{ automated_docker_sensu_host_tmp_config_path }}/container-{{ inventory_hostname }}-sensu-uchiwa.json"
+    dest: "{{ automated_docker_sensu_container_config_path }}/uchiwa.json"
+
+# Default variables for Fluentd
+# NOTE automated_docker_fluentd_config_repository is defined if you need to install fluentd container
+# automated_docker_fluentd_config_repository: git@git.example.com:fluentd/fluentd-config.git
+automated_docker_fluentd_config_branch_name: master
+automated_docker_fluentd_config_path: /etc/td-agent/conf
+
+# Default variables for Telegraf
+automated_docker_telegraf_host_config_file_path: "{{ automated_docker_host_config_path | default('') }}/telegraf.conf"
+automated_docker_telegraf_config_path: /etc/telegraf
+
+# Default variables for InfluxDB
+automated_docker_influxdb_host_config_file_path: "{{ automated_docker_host_config_path | default('') }}/influxdb.conf"
+automated_docker_influxdb_config_path: /etc/influxdb
+#automated_docker_influxdb_admin_username: admin
+#automated_docker_influxdb_admin_password: CHANGEME

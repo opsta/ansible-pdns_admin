@@ -1,0 +1,73 @@
+global
+    log {{ automated_docker_haproxy_syslog_server }} local0
+    log {{ automated_docker_haproxy_syslog_server }} local1 notice
+    log-send-hostname {{ inventory_hostname }}
+    maxconn 4096
+    tune.bufsize 384000
+    tune.ssl.default-dh-param 2048
+
+    # https://cbonte.github.io/haproxy-dconv/1.6/management.html#9.2
+    # This is a MUST to do blue-green deployment
+    stats socket /usr/local/etc/haproxy/haproxy.sock mode 600 level admin
+
+    # https://cipherli.st/
+    ssl-default-bind-options no-sslv3 no-tls-tickets force-tlsv12
+    ssl-default-bind-ciphers AES128+EECDH:AES128+EDH
+
+defaults
+    log global
+    option dontlognull
+    option redispatch
+    retries 3
+    timeout client 50s
+    timeout connect 10s
+    timeout server 50s
+    maxconn 4096
+
+listen stats
+    bind *:9000
+    mode http
+    stats enable
+    stats uri /
+    stats realm HAProxy\ Statistics
+    stats hide-version
+    stats auth {{ automated_docker_haproxy_stats_username }}:{{ automated_docker_haproxy_stats_password }}
+
+frontend {{ automated_docker_haproxy_service_name }}-http-front
+    bind *:80
+    reqadd X-Forwarded-Proto:\ http
+    mode http
+    option httplog
+    option forwardfor except 127.0.0.0/8
+    option http-server-close
+    option httpclose
+{% if automated_docker_haproxy_virtual_hosts is defined %}
+    use_backend {{ automated_docker_haproxy_backend_name }} if { hdr(Host) -i {{ automated_docker_haproxy_virtual_hosts | join(' ') }} }
+{% endif %}
+    default_backend {{ automated_docker_haproxy_backend_name }}
+
+{% if automated_docker_haproxy_ssl_certificate_pem_file is defined %}
+# https://cipherli.st/
+frontend {{ automated_docker_haproxy_service_name }}-https-front
+    bind *:443 ssl crt {{ automated_docker_haproxy_container_cert_path }}/{{ automated_docker_haproxy_ssl_certificate_pem_file }} ciphers AES128+EECDH:AES128+EDH force-tlsv12 no-sslv3
+    reqadd X-Forwarded-Proto:\ https
+    option tcplog
+    option http-server-close
+    option httpclose
+    #rspadd Strict-Transport-Security:\ max-age=31536000;\ includeSubDomains;\ preload
+    #rspadd X-Frame-Options:\ DENY
+{% if automated_docker_haproxy_virtual_hosts is defined %}
+    use_backend {{ automated_docker_haproxy_backend_name }} if { hdr(Host) -i {{ automated_docker_haproxy_virtual_hosts | join(' ') }} }
+{% endif %}
+    default_backend {{ automated_docker_haproxy_backend_name }}
+{% endif %}
+
+backend {{ automated_docker_haproxy_backend_name }}
+{% if automated_docker_haproxy_forward_http and automated_docker_haproxy_ssl_certificate_pem_file is defined %}
+    redirect scheme https code 301 if !{ ssl_fc }
+{% endif %}
+    mode http
+    balance {{ automated_docker_haproxy_balance }}
+{% for item in automated_docker_haproxy_backend %}
+    server {{ item.target.split('.')[0] }} {{ lookup('dig', item.target) }}:{{ item.port }} check port {{ item.port }} inter {{ automated_docker_haproxy_check_interval }} rise {{ automated_docker_haproxy_check_rise }} fall {{ automated_docker_haproxy_check_fall }}
+{% endfor %}

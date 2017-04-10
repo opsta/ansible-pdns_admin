@@ -1,0 +1,3 @@
+---
+nginx_service_name: nginx
+nginx_conf_filepath: /etc/nginx/nginx.conf

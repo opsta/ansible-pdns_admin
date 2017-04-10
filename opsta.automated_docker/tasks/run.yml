@@ -1,0 +1,134 @@
+---
+- block: # Prepare container variables
+
+  - name: Combine docker container variable
+    set_fact:
+      automated_docker_run: "{{ automated_docker_container_default[automated_docker_container.key] | default({}) | combine(automated_docker_container.value) }}"
+
+
+- block: # Search for configuration path
+
+  - name: Set list of path to look for "{{ automated_docker_run.image }}" configuration directory
+    set_fact:
+      automated_docker_search_config_paths: "{{ automated_docker_search_config_paths }} + [ '{{ automated_docker_search_config_path }}' ]"
+    with_items: "{{ group_names }}"
+
+  - name: Check if "{{ automated_docker_run.image }}" configuration directory exists
+    stat:
+      path: "{{ item }}"
+    register: automated_docker_config_check
+    with_first_found:
+      - files: "{{ automated_docker_search_config_paths }}"
+        skip: true
+
+  - name: Set "{{ automated_docker_run.image }}" configuration directory
+    set_fact:
+      automated_docker_host_config_path: "{{ automated_docker_config_check.results[0].stat.path }}"
+    when: |
+      automated_docker_config_check.results[0].stat is defined and
+      automated_docker_config_check.results[0].stat.isdir
+
+
+- block: # Pull image
+
+  - name: Pull "{{ automated_docker_run.image }}"
+    docker_image:
+      name: "{{ automated_docker_run.image }}"
+      force: "{{ automated_docker_run.pull | default(automated_docker_container_default_pull) }}"
+
+
+- block: # Pre-upgrade container
+
+  - name: Stop "{{ automated_docker_run.name }}" container in case of upgrade
+    docker_container:
+      name: "{{ automated_docker_run.name }}"
+      state: stopped
+    when: automated_docker_run.upgrade is defined and automated_docker_run.upgrade
+
+  - name: Set container stopped name variable
+    set_fact:
+      automated_docker_container_stopped_name: "{{ automated_docker_run.name }}-stopped"
+    when: automated_docker_run.upgrade is defined and automated_docker_run.upgrade
+
+  - name: Rename stopped container
+    command: "docker rename {{ automated_docker_run.name }} {{ automated_docker_container_stopped_name }}"
+    when: automated_docker_run.upgrade is defined and automated_docker_run.upgrade
+
+
+- block: # Run Docker container
+
+  - name: Create "{{ automated_docker_run.name }}" container
+    docker_container:
+      name: "{{ automated_docker_run.name }}"
+      image: "{{ automated_docker_run.image }}"
+      restart_policy: "{{ automated_docker_run.restart_policy | default(automated_docker_container_default_restart_policy) }}"
+      recreate: "{{ automated_docker_run.recreate | default(automated_docker_container_default_recreate) }}"
+      hostname: "{{ automated_docker_run.hostname | default(omit) }}"
+      user: "{{ automated_docker_run.user | default(omit) }}"
+      entrypoint: "{{ automated_docker_run.entrypoint | default(omit) }}"
+      command: "{{ automated_docker_run.command | default(omit) }}"
+      published_ports: "{{ automated_docker_run.published_ports | default(omit) }}"
+      exposed_ports: "{{ automated_docker_run.exposed_ports | default(omit) }}"
+      links: "{{ automated_docker_run.links | default(omit) }}"
+      env: "{{ automated_docker_run.env | default(omit) }}"
+      volumes: "{{ automated_docker_run.volumes | default(omit) }}"
+      log_driver: "{{ automated_docker_run.log_driver | default(omit) }}"
+      log_options: "{{ automated_docker_run.log_options | default(omit) }}"
+      etc_hosts: "{{ automated_docker_run.etc_hosts | default(omit) }}"
+      network_mode: "{{ automated_docker_run.network_mode | default(omit) }}"
+      capabilities: "{{ automated_docker_run.capabilities | default(omit) }}"
+      volumes_from: "{{
+        (automated_docker_run.upgrade is defined and
+        automated_docker_run.upgrade) |
+        ternary(automated_docker_container_stopped_name,
+          automated_docker_run.volumes_from is defined |
+          ternary(automated_docker_run.volumes_from, omit)
+        ) }}"
+      state: present
+    register: automated_docker_create_result
+
+  - name: Add "{{ automated_docker_run.name }}" container to inventory
+    add_host:
+      name: "{{ automated_docker_run.name }}"
+      groups: automated_docker_containers
+      ansible_connection: docker
+      ansible_user: root
+      ansible_docker_extra_args: "{{ automated_docker_extra_args | default(omit) }}"
+
+
+- block: # Run pre-start configure on container
+
+  - name: Check if "{{ automated_docker_run.name }}" has pre-start container tasks file
+    stat:
+      path: "{{ role_path }}/tasks/{{ automated_docker_container.key }}/{{ automated_docker_container.key }}_pre_start.yml"
+      get_md5: no
+    register: automated_docker_has_pre_start_container
+
+  - name: Include "{{ automated_docker_run.name }}" pre-run task
+    include: "{{ automated_docker_container.key }}/{{ automated_docker_container.key }}_pre_start.yml"
+    when: automated_docker_has_pre_start_container.stat.exists == true
+
+  - meta: flush_handlers
+
+
+- block: # Start container
+
+  - name: Start "{{ automated_docker_run.name }}" container or restart if needed
+    docker_container:
+      name: "{{ automated_docker_run.name }}"
+      state: started
+
+
+- block: # Run post-start configure on container
+
+  - name: Check if "{{ automated_docker_run.name }}" has post-start container tasks file
+    stat:
+      path: "{{ role_path }}/tasks/{{ automated_docker_container.key }}/{{ automated_docker_container.key }}_post_start.yml"
+      get_md5: no
+    register: automated_docker_has_post_start_container
+
+  - name: Include "{{ automated_docker_run.name }}" post-run task
+    include: "{{ automated_docker_container.key }}/{{ automated_docker_container.key }}_post_start.yml"
+    when: automated_docker_has_post_start_container.stat.exists == true
+
+  - meta: flush_handlers

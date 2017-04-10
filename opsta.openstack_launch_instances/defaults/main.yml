@@ -1,0 +1,46 @@
+---
+
+os_service_name: "{{ service_name | default('service-test') }}"
+os_instance_format_name: "{{ os_service_name }}-%d"
+os_volumes_list: []
+os_instances: []
+
+os_ssh_port: "{{ host_preparation_sshd_port | default(22) }}"
+
+os_pdns_rrsets_a_record:
+  rrsets:
+  - name: "{{ item }}.{{ os_pdns_domain }}."
+    type: A
+    changetype: REPLACE
+    ttl: 300
+    records:
+    - content: "{{ hostvars[item].ansible_host }}"
+      disabled: false
+      name: "{{ item }}.{{ os_pdns_domain }}."
+      ttl: 300
+      type: A
+      set-ptr: true
+
+os_pdns_rrsets_srv_record:
+  rrsets:
+  - name: "{{ os_pdns_service_name }}._http._tcp.{{ os_pdns_domain }}."
+    type: SRV
+    changetype: REPLACE
+    ttl: 300
+    records: "{{ os_pdns_srv_records }}"
+
+os_pdns_srv_records: []
+os_pdns_srv_record_template:
+- content: "{{ os_pdns_srv_priority }} {{ os_pdns_srv_weight }} {{ os_pdns_srv_port }} {{ item }}.{{ os_pdns_domain }}."
+  disabled: false
+  name: "{{ os_pdns_service_name }}._http._tcp.{{ os_pdns_domain }}."
+  ttl: 300
+  type: SRV
+
+os_pdns_srv_port: 80
+os_pdns_srv_priority: 1
+os_pdns_srv_weight: 100
+os_pdns_service_name: "{{ service_name | default('service-test') }}"
+os_pdns_domain: example.org
+os_pdns_key_api: CHANGEME
+#os_pdns_authoritative_server: http://127.0.0.1:8081

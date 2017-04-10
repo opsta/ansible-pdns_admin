@@ -1,0 +1,15 @@
+---
+- name: Grant access to the DB
+  mysql_user:
+    login_user: "root"
+    login_password: "{{ mariadb_root_password }}"
+    login_host: "127.0.0.1"
+    name: "{{ mariadb_user_name }}"
+    password: "{{ mariadb_user_password }}"
+    host: "{{ item }}"
+    state: "present"
+    priv: "*.*:ALL"
+  with_items:
+    - "localhost"
+    - "%"
+  when: "mariadb_user_name is defined and mariadb_user_password is defined"

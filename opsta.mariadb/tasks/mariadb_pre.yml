@@ -1,0 +1,62 @@
+---
+- block: # Set MariaDB root password
+  - name: Confirm MariaDB root password before installing
+    debconf:
+      name: "{{ mariadb_server_package_name }}"
+      question: mysql-server/root_password
+      value: "{{ mariadb_root_password | quote }}"
+      vtype: password
+
+  - name: Confirm MariaDB root password before installing
+    debconf:
+      name: "{{ mariadb_server_package_name }}"
+      question: mysql-server/root_password_again
+      value: "{{ mariadb_root_password | quote }}"
+      vtype: password
+
+
+- block: # Prepare MariaDB repository
+  - name: Add MariaDB repository key
+    apt_key:
+      keyserver: "{{ mariadb_apt_key_server }}"
+      id: "{{ mariadb_apt_key_id }}"
+      state: present
+    when: mariadb_server_package_name == 'mariadb-server'
+
+  - name: Add MariaDB repository
+    apt_repository:
+      repo: "{{ mariadb_deb_repository }}"
+      state: present
+    when: mariadb_server_package_name == 'mariadb-server'
+
+
+- block: # Prepare MySQL repository
+  - name: Set MySQL version before installing
+    debconf:
+      name: mysql-apt-config
+      question: mysql-apt-config/select-server
+      value: "{{ mariadb_mysql_version }}"
+      vtype: select
+    when: mariadb_server_package_name == 'mysql-server'
+
+  - name: Download MySQL apt repository deb file
+    get_url:
+      url: "{{ mariadb_mysql_apt_deb }}"
+      dest: "{{ mariadb_mysql_apt_deb_target_path }}"
+    when: mariadb_server_package_name == 'mysql-server'
+
+  - name: Install MySQL apt repository
+    apt:
+      deb: "{{ mariadb_mysql_apt_deb_target_path }}"
+    when: mariadb_server_package_name == 'mysql-server'
+
+
+- block: # Prepare Percona repository
+  - name: Download Percona apt repository deb file
+    get_url:
+      url: "{{ mariadb_percona_apt_deb }}"
+      dest: "{{ mariadb_percona_apt_deb_target_path }}"
+
+  - name: Install Percona apt repository
+    apt:
+      deb: "{{ mariadb_percona_apt_deb_target_path }}"

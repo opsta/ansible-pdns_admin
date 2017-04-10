@@ -1,0 +1,8 @@
+{
+  "client": {
+    "name": "{{ automated_docker_sensu_client_name }}",
+    "address": "{{ ansible_host }}",
+    "bind": "0.0.0.0",
+    "subscriptions": [{{ automated_docker_sensu_client_subscriptions_joined }}]
+  }
+}

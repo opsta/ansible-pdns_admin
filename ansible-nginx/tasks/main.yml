@@ -1,0 +1,4 @@
+---
+- include: nginx_install.yml
+- include: nginx_pre.yml
+- include: nginx_post.yml

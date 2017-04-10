@@ -1,0 +1,46 @@
+---
+- block: # Looking for SSH key
+
+  - name: Set list of path to look for jenkins ssh key
+    set_fact:
+      automated_docker_jenkins_host_sshkey_paths: "{{ automated_docker_jenkins_host_sshkey_paths }} + [ '{{ automated_docker_jenkins_host_sshkey_path }}' ]"
+    with_items: "{{ group_names }}"
+
+  - name: Check if jenkins ssh key is exists
+    stat:
+      path: "{{ item }}"
+    register: automated_docker_jenkins_sshkey_check
+    with_first_found:
+      - files: "{{ automated_docker_jenkins_host_sshkey_paths }}"
+        skip: true
+  - name: Set jenkins ssh key path
+    set_fact:
+      automated_docker_jenkins_sshkey_stat: "{{ automated_docker_jenkins_sshkey_check.results[0].stat }}"
+    when: automated_docker_jenkins_sshkey_check.results[0].stat is defined
+
+- block: # Copy SSH key
+
+  - name: Make sure .ssh path is exists
+    raw: "mkdir -p {{ automated_docker_jenkins_container_sshkey_path | dirname }}"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: |
+      automated_docker_jenkins_sshkey_stat is defined and
+      automated_docker_jenkins_sshkey_stat.exists
+
+  - name: Copy jenkins ssh key
+    command: "docker cp {{ automated_docker_jenkins_sshkey_stat.path }}
+      {{ automated_docker_run.name }}:{{ automated_docker_jenkins_container_sshkey_path }}"
+    when: |
+      automated_docker_jenkins_sshkey_stat is defined and
+      automated_docker_jenkins_sshkey_stat.exists
+
+  - name: Change owner of configuration file
+    raw: "chown -R jenkins:jenkins
+        {{ automated_docker_jenkins_container_sshkey_path | dirname }} &&
+      chmod -R 400
+        {{ automated_docker_jenkins_container_sshkey_path | dirname }} &&
+      chmod 700 {{ automated_docker_jenkins_container_sshkey_path | dirname }}"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: |
+      automated_docker_jenkins_sshkey_stat is defined and
+      automated_docker_jenkins_sshkey_stat.exists

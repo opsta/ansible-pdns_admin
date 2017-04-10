@@ -1,0 +1,61 @@
+---
+# TODO Use template files from templates role and use .j2 instead
+
+- block: # Check and register for jenkins configuration file
+
+  - name: Reset variable
+    set_fact:
+      automated_docker_jenkins_host_config_file_paths: []
+      automated_docker_jenkins_config_check:
+      automated_docker_jenkins_config_stat:
+
+  - name: Set list of path to look for jenkins "{{ automated_docker_jenkins_config_filename }}" file
+    set_fact:
+      automated_docker_jenkins_host_config_file_paths: "{{ automated_docker_jenkins_host_config_file_paths }} + [ '{{ automated_docker_jenkins_host_config_file_path }}' ]"
+    with_items: "{{ group_names }}"
+
+  - name: Check if jenkins "{{ automated_docker_jenkins_config_filename }}" template file exists
+    stat:
+      path: "{{ item }}"
+    register: automated_docker_jenkins_config_check
+    with_first_found:
+      - files: "{{ automated_docker_jenkins_host_config_file_paths }} + [ '{{ automated_docker_jenkins_templates_path }}/jenkins-{{ automated_docker_jenkins_config_filename }}.j2' ]"
+        skip: true
+  - name: Set jenkins "{{ automated_docker_jenkins_config_filename }}" file path
+    set_fact:
+      automated_docker_jenkins_config_stat: "{{ automated_docker_jenkins_config_check.results[0].stat }}"
+    when: automated_docker_jenkins_config_check.results[0].stat is defined
+
+- block: # Copy jenkins configuration file
+
+  - name: Create jenkins "{{ automated_docker_jenkins_config_filename }}" file
+    template:
+      src: "{{ automated_docker_jenkins_config_stat.path }}"
+      dest: "{{ automated_docker_jenkins_host_tmp_config_path }}"
+    when: |
+      automated_docker_jenkins_config_stat is defined and
+      automated_docker_jenkins_config_stat.exists
+
+  - name: Copy jenkins "{{ automated_docker_jenkins_config_filename }}" file
+    command: |
+      docker cp "{{ automated_docker_jenkins_host_tmp_config_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_jenkins_container_config_file_path }}"
+    when: |
+      automated_docker_jenkins_config_stat is defined and
+      automated_docker_jenkins_config_stat.exists
+
+  - name: Change owner of "{{ automated_docker_jenkins_config_filename }}" file
+    raw: "chown jenkins:jenkins
+      {{ automated_docker_jenkins_container_config_file_path }}"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: |
+      automated_docker_jenkins_config_stat is defined and
+      automated_docker_jenkins_config_stat.exists
+
+  - name: Remove temporary jenkins "{{ automated_docker_jenkins_config_filename }}" file
+    file:
+      path: "{{ automated_docker_jenkins_host_tmp_config_path }}"
+      state: absent
+    when: |
+      automated_docker_jenkins_config_stat is defined and
+      automated_docker_jenkins_config_stat.exists

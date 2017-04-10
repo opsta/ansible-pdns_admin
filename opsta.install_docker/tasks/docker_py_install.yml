@@ -1,0 +1,20 @@
+---
+- block: # Install docker-py
+  - name: Check to see if pip is already installed.
+    command: pip --version
+    ignore_errors: true
+    changed_when: false
+    when: install_docker_py
+    register: install_docker_pip_is_installed
+
+  - name: Install pip if not installed
+    shell: curl https://bootstrap.pypa.io/get-pip.py | python
+    when: install_docker_py and install_docker_pip_is_installed.rc != 0
+
+  - name: Install docker-py
+    pip:
+      name: docker-py
+    when: install_docker_py
+
+  tags:
+    - install-docker-py

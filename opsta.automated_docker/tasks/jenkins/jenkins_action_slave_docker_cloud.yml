@@ -1,0 +1,117 @@
+---
+- block: # Prepare variables
+
+  - name: Get URL for jenkins master DOCKER_HOST var
+    shell: "docker-machine ls
+      --filter='name=^{{ automated_docker_jenkins_master_host_name }}$' |
+      tail -n1 | awk '{ print $5 }'"
+    register: automated_docker_jenkins_master_host
+    when: inventory_hostname != 'localhost'
+    environment:
+      MACHINE_STORAGE_PATH: "{{ automated_docker_machine_storage_path }}"
+
+  - name: Set environment variables for jenkins master
+    set_fact:
+      automated_docker_machine_environment_jenkins_master:
+        DOCKER_TLS_VERIFY: 1
+        DOCKER_HOST: "{{ automated_docker_jenkins_master_host.stdout }}"
+        DOCKER_CERT_PATH: "{{ automated_docker_jenkins_master_cert_path }}"
+        DOCKER_MACHINE_NAME: "{{ automated_docker_jenkins_master_host_name }}"
+    when: inventory_hostname != 'localhost'
+
+  - name: Set Docker extra arguments variable for jenkins master
+    set_fact:
+      automated_docker_jenkins_master_extra_args: --tlsverify --tlscacert="{{ automated_docker_cert_path }}/ca.pem" --tlscert="{{ automated_docker_cert_path }}/cert.pem" --tlskey="{{ automated_docker_cert_path }}/key.pem" -H="{{ automated_docker_jenkins_master_host.stdout }}"
+    when: inventory_hostname != 'localhost'
+
+  - name: Add host jenkins master container
+    add_host:
+      name: "{{ automated_docker_jenkins_master_container_name }}"
+      groups: automated_docker_container_jenkins_master
+      ansible_connection: docker
+      ansible_user: root
+      ansible_docker_extra_args: "{{ automated_docker_jenkins_master_extra_args | default(omit) }}"
+
+  - name: Set Jenkins credentials
+    set_fact:
+      automated_docker_jenkins_cli_password_parameter: "--password {{ automated_docker_jenkins_admin_password }}"
+
+- name: Check username and password on jenkins master and create certificate directory
+  raw: "{{ automated_docker_jenkins_test_start_command }} &&
+    mkdir -p {{ automated_docker_jenkins_master_container_slave_cert_path }}"
+  delegate_to: "{{ automated_docker_jenkins_master_container_name }}"
+
+- name: Copy docker slave certificate files to jenkins master
+  command: "docker cp {{ automated_docker_cert_path }}/.
+    {{ automated_docker_jenkins_master_container_name }}:{{ automated_docker_jenkins_master_container_slave_cert_path }}"
+  environment: "{{ automated_docker_machine_environment_jenkins_master }}"
+
+- name: Get jenkins master configuration files
+  command: "docker cp {{ automated_docker_jenkins_master_container_name }}:{{ automated_docker_jenkins_container_config_file_path }}
+    {{ automated_docker_jenkins_master_host_tmp_config_path }}"
+  environment: "{{ automated_docker_machine_environment_jenkins_master }}"
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+
+- name: Set cloud server url
+  set_fact:
+    automated_docker_jenkins_slave_cloud_server_url: "{{ automated_docker_jenkins_master_host.stdout | regex_replace('tcp', 'https') }}"
+
+- name: Cleanup config files
+  replace:
+    dest: "{{ automated_docker_jenkins_master_host_tmp_config_path }}"
+    regexp: '<clouds/>'
+    replace: "  <clouds>\n
+  </clouds>"
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+
+- name: Create blockinfile from template
+  template:
+    src: "{{ automated_docker_jenkins_master_templates_path }}"
+    dest: "{{ automated_docker_jenkins_master_templates_tmp_path }}"
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+
+- name: Add cloud docker configuration
+  blockinfile:
+    dest: "{{ automated_docker_jenkins_master_host_tmp_config_path }}"
+    marker: "<!-- {mark} ANSIBLE MANAGED BLOCK for {{ group_names[1] }} -->"
+    insertbefore: "(</clouds>|<clouds/>|</java.util.concurrent.CopyOnWriteArrayList>)"
+    block: "{{ lookup('file', automated_docker_jenkins_master_templates_tmp_path) }}"
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+
+- name: Copy config.yml back to jenkins master
+  command: "docker cp {{ automated_docker_jenkins_master_host_tmp_config_path }}
+    {{ automated_docker_jenkins_master_container_name }}:{{ automated_docker_jenkins_container_config_file_path }}"
+  environment: "{{ automated_docker_machine_environment_jenkins_master }}"
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+
+- name: Remove temporary jenkins master configuration file on host
+  file:
+    path: "{{ automated_docker_jenkins_master_host_tmp_config_path }}"
+    state: absent
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+- name: Remove temporary jenkins slave configuration file on host
+  file:
+    path: "{{ automated_docker_jenkins_master_templates_tmp_path }}"
+    state: absent
+  with_items: "{{ automated_docker_jenkins_config_files_list }}"
+  loop_control:
+    loop_var: automated_docker_jenkins_config_filename
+
+- name: Change owner of files and restart jenkins master
+  raw: "chown -R jenkins:jenkins
+    {{ automated_docker_jenkins_master_container_slave_base_cert_path }}
+    {{ automated_docker_jenkins_home }}/*.xml &&
+    {{ automated_docker_jenkins_cli_command }} safe-restart"
+  delegate_to: "{{ automated_docker_jenkins_master_container_name }}"

@@ -1,0 +1,11 @@
+---
+- include: keepalived_install.yml
+- include: keepalived_post.yml
+- include: keepalived_openstack_address_pairs.yml
+  vars:
+    ansible_python_interpreter: python
+  environment:
+    OS_PROJECT_NAME: "{{ os_instance.project_name | default(lookup('env','OS_PROJECT_NAME')) }}"
+  when: |
+    keepalived_os_network is defined and
+    keepalived_os_security_groups is defined

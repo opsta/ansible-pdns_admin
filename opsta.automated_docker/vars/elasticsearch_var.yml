@@ -1,0 +1,17 @@
+---
+automated_docker_container_default:
+  elasticsearch:
+    image: elasticsearch:5.1.2-alpine
+    name: elasticsearch
+    hostname: elasticsearch
+    command: elasticsearch -Des.cluster.name="{{ automated_docker_elasticsearch_cluster_name }}"
+    volumes:
+      - /usr/share/elasticsearch/config
+      - /usr/share/elasticsearch/data
+    env:
+      ES_HEAP_SIZE: 512m
+    # published_ports:
+    #   - "9200:9200"
+    #   - "9300:9300"
+
+automated_docker_elasticsearch_cluster_name: ElasticSearchCluster

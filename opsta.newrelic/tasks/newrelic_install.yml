@@ -1,0 +1,10 @@
+- name: Install New Relic
+  apt:
+     pkg: "{{ item }}"
+     state: latest
+     update_cache: yes
+  with_items:
+    - "{{ newrelic_package_name }}"
+  when: newrelic_package_check is defined
+  tags:
+    - newrelic-install

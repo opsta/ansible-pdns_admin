@@ -1,0 +1,41 @@
+---
+- name: Get haproxy inventory hostname
+  set_fact:
+    automated_docker_lb_haproxy_hostname: "{{ automated_docker_lb_haproxy_host.target.split('.')[0] }}"
+
+- name: Get URL for HAProxy DOCKER_HOST var
+  shell: docker-machine ls --filter="name=^{{ automated_docker_lb_haproxy_hostname }}$" | tail -n1 | awk '{ print $5 }'
+  register: automated_docker_lb_haproxy_ip
+  environment:
+    MACHINE_STORAGE_PATH: "{{ automated_docker_machine_storage_path }}"
+
+- name: Start utilities container
+  docker_container:
+    name: "{{ automated_docker_lb_utilities_container_name }}"
+    image: "{{ automated_docker_lb_utilities_image }}"
+    pull: "{{ automated_docker_lb_utilities_image_pull }}"
+    entrypoint: sleep 9999
+    volumes_from: haproxy
+    state: started
+  environment: "{{ automated_docker_lb_haproxy_machine_environment }}"
+
+- name: Add utilities container
+  add_host:
+    name: "{{ automated_docker_lb_utilities_container_name }}"
+    groups: load_balancers
+    ansible_connection: docker
+    ansible_user: root
+    ansible_docker_extra_args: "--tlsverify
+      --tlscacert={{ automated_docker_cert_path }}/ca.pem
+      --tlscert={{ automated_docker_cert_path }}/cert.pem
+      --tlskey={{ automated_docker_cert_path }}/key.pem
+      -H={{ automated_docker_lb_haproxy_ip.stdout }}"
+
+- name: Doing {{ automated_docker_lb_action }} container from Load Balancer
+  haproxy:
+    state: "{{ automated_docker_lb_action }}"
+    host: "{{ inventory_hostname }}"
+    backend: "{{ automated_docker_lb_haproxy_backend_name }}"
+    socket: "{{ automated_docker_lb_haproxy_socket_path }}"
+    wait: yes
+  delegate_to: "{{ automated_docker_lb_utilities_container_name }}"

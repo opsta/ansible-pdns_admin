@@ -1,0 +1,4 @@
+---
+- include: powerdns_install.yml
+- include: powerdns_pre.yml
+- include: powerdns_post.yml

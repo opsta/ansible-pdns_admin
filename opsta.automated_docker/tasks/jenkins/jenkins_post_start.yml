@@ -1,0 +1,113 @@
+---
+# NOTE Need to use docker command because jenkins container doesn't has python installed
+
+- block: # Unlock Jenkins
+
+  - name: Set Jenkins credentials
+    set_fact:
+      automated_docker_jenkins_cli_password_parameter: "--password {{ automated_docker_jenkins_old_admin_password | default(automated_docker_jenkins_admin_password) }}"
+    when: not automated_docker_create_result.changed
+
+  - name: Wait until Jenkins completely started
+    raw: "NEXT_WAIT_TIME=0;
+      until {{ automated_docker_jenkins_test_start_command }} ||
+      [ $(( NEXT_WAIT_TIME++ )) -eq 20 ];
+      do sleep 1; done &&
+      {{ automated_docker_jenkins_test_start_command }}"
+    delegate_to: "{{ automated_docker_run.name }}"
+
+  - name: Unlock Jenkins
+    raw: "cp
+      {{ automated_docker_jenkins_check_file_path }}
+      {{ automated_docker_jenkins_unlock_file_path }}"
+    delegate_to: "{{ automated_docker_run.name }}"
+    vars:
+      ansible_user: jenkins
+
+- block: # Install Jenkins plugins
+
+  - name: Install Jenkins plugins
+    raw: "{{ automated_docker_jenkins_cli_command }} install-plugin
+      {{ automated_docker_jenkins_install_plugins | join(' ') }}"
+    delegate_to: "{{ automated_docker_run.name }}"
+
+- block: # Configure docker-plugin
+
+  - name: Download Docker client
+    raw: "docker version | grep {{ automated_docker_jenkins_docker_version }} ||
+      (curl -o {{ automated_docker_jenkins_docker_client_url | basename }}
+        {{ automated_docker_jenkins_docker_client_url }} &&
+      tar xvfz {{ automated_docker_jenkins_docker_client_url | basename }} &&
+      mv docker/* {{ automated_docker_jenkins_docker_bin_path }}/ &&
+      rm -rf docker {{ automated_docker_jenkins_docker_client_url | basename }})"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: "'docker-plugin' in automated_docker_jenkins_install_plugins"
+
+  - name: Check if can run docker command
+    raw: "docker version &> /dev/null && echo yes || echo no"
+    register: automated_docker_jenkins_can_do_docker
+    delegate_to: "{{ automated_docker_run.name }}"
+    vars:
+      ansible_user: jenkins
+    when: "'docker-plugin' in automated_docker_jenkins_install_plugins"
+
+  - name: Add jenkins user to the same group as docker socket
+    raw: "(test -e {{ automated_docker_jenkins_docker_socket_path }} &&
+      adduser jenkins $(stat -c %G /var/run/docker.sock)) &&
+      echo yes || echo no"
+    register: automated_docker_jenkins_can_do_docker
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: |
+      "'docker-plugin' in automated_docker_jenkins_install_plugins and
+      automated_docker_jenkins_can_do_docker.stdout_lines[0] == 'no'"
+
+- block: # Copy SSH key
+
+  - name: Copy SSH key
+    include: jenkins_post_start_ssh.yml
+
+- block: # Build jenkins configuration file
+
+  - name: Build each jenkins configuration file
+    include: jenkins_post_start_build_config.yml
+    with_items: "{{ automated_docker_jenkins_config_files_list }}"
+    loop_control:
+      loop_var: automated_docker_jenkins_config_filename
+
+- block: # Set admin pasword
+
+  # NOTE There is no good way to generate jbcrypt from command line
+  # so it need to use sha256 for now
+  - name: Get sha256 hash password
+    raw: "echo -n
+      '{{ automated_docker_jenkins_admin_password }}{{ '{' }}{{ automated_docker_jenkins_admin_password_salt }}{{ '}' }}' |
+      sha256sum"
+    register: automated_docker_jenkins_admin_password_sha256
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: automated_docker_jenkins_admin_username == 'admin'
+
+  - name: Change admin password
+    raw: "sed -i
+      's#passwordHash.*#passwordHash>{{ automated_docker_jenkins_admin_password_salt }}:{{ automated_docker_jenkins_admin_password_sha256.stdout.split(' ')[0] }}</passwordHash>#g'
+      {{ automated_docker_jenkins_home_path }}/users/admin/config.xml"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: automated_docker_jenkins_admin_username == 'admin'
+
+- block: # Safe restart Jenkins
+
+  - name: Restart jenkins container
+    docker_container:
+      name: "{{ automated_docker_run.name }}"
+      restart: true
+      state: started
+
+  - name: Set Jenkins credentials
+    set_fact:
+      automated_docker_jenkins_cli_password_parameter: "--password {{ automated_docker_jenkins_admin_password }}"
+
+  - name: Wait until Jenkins completely restarted
+    raw: "sleep 10; NEXT_WAIT_TIME=0;
+      until {{ automated_docker_jenkins_test_start_command }} ||
+      [ $(( NEXT_WAIT_TIME++ )) -eq 5 ];
+      do sleep 1; done"
+    delegate_to: "{{ automated_docker_run.name }}"

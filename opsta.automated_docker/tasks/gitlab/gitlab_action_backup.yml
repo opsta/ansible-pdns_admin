@@ -1,0 +1,98 @@
+---
+- block: # Start backup GitLab with another container
+
+  - name: Backup GitLab
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_backup_container_name }}"
+      image: "{{ automated_docker_run.image }}"
+      command: app:rake gitlab:backup:create
+      detach: false
+      links: "{{ automated_docker_run.links | default(omit) }}"
+      env:
+        GITLAB_SECRETS_DB_KEY_BASE: "{{ automated_docker_run.env.GITLAB_SECRETS_DB_KEY_BASE }}"
+        GITLAB_SECRETS_OTP_KEY_BASE: "{{ automated_docker_run.env.GITLAB_SECRETS_OTP_KEY_BASE | default(omit) }}"
+        GITLAB_SECRETS_SECRET_KEY_BASE: "{{ automated_docker_run.env.GITLAB_SECRETS_SECRET_KEY_BASE | default(omit) }}"
+        GITLAB_BACKUP_DIR: "{{ automated_docker_gitlab_action_backup_container_path }}"
+      volumes:
+        - "{{ automated_docker_gitlab_action_backup_container_path }}"
+      volumes_from: "{{ automated_docker_run.name }}"
+      state: started
+
+- block: # Copy backup file to target directory
+
+  - name: Create backup target directory
+    file:
+      path: "{{ automated_docker_gitlab_action_backup_ssh_host_keys_host_path }}"
+      state: directory
+    when: automated_docker_gitlab_action_backup_to_host
+
+  - name: Copy backup file to target directory
+    command: "docker cp
+      {{ automated_docker_gitlab_action_backup_container_name }}:{{ automated_docker_gitlab_action_backup_container_path }}/.
+      {{ automated_docker_gitlab_action_backup_target_host_path }}"
+    when: automated_docker_gitlab_action_backup_to_host
+
+  - name: Copy ssh host keys to target directory
+    command: "docker cp
+      {{ automated_docker_gitlab_action_backup_container_name }}:{{ automated_docker_gitlab_action_backup_ssh_host_keys_container_path }}/.
+      {{ automated_docker_gitlab_action_backup_ssh_host_keys_host_path }}"
+    when: automated_docker_gitlab_action_backup_to_host
+
+- block: # Upload backup to Swift
+
+  - name: Start utilities container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+      image: "{{ automated_docker_gitlab_action_backup_swift_utilities_image }}"
+      command: sleep 9999
+      env: "{{ automated_docker_openstack_environment }}"
+      volumes_from: "{{ automated_docker_gitlab_action_backup_container_name }}"
+      state: started
+    when: automated_docker_gitlab_action_backup_to_swift
+
+  - name: Add utilities container to inventory
+    add_host:
+      name: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+      groups: automated_docker_gitlab_utilities_containers
+      ansible_connection: docker
+      ansible_user: root
+      ansible_docker_extra_args: "{{ automated_docker_extra_args | default(omit) }}"
+    when: automated_docker_gitlab_action_backup_to_swift
+
+  - name: Get backup file name
+    find:
+      paths: "{{ automated_docker_gitlab_action_backup_container_path }}"
+    delegate_to: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+    register: automated_docker_gitlab_action_backup_file_name
+    when: automated_docker_gitlab_action_backup_to_swift
+
+  - name: Upload backup file to Swift
+    os_object:
+      state: present
+      name: "{{ automated_docker_gitlab_action_backup_swift_folder }}/{{ automated_docker_gitlab_action_backup_file_name.files[-1].path | basename }}"
+      container: "{{ automated_docker_gitlab_action_backup_swift_container_name }}"
+      filename: "{{ automated_docker_gitlab_action_backup_file_name.files[-1].path }}"
+    delegate_to: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+    when: automated_docker_gitlab_action_backup_to_swift
+
+  - name: Upload ssh host keys to Swift
+    os_object:
+      state: present
+      name: "{{ automated_docker_gitlab_action_backup_swift_folder }}/{{ automated_docker_gitlab_action_backup_file_name.files[-1].path | basename }}/ssh_host_keys"
+      container: "{{ automated_docker_gitlab_action_backup_swift_container_name }}"
+      filename: "{{ automated_docker_gitlab_action_backup_ssh_host_keys_container_path }}"
+    delegate_to: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+    when: automated_docker_gitlab_action_backup_to_swift
+
+  - name: Delete utilities container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_backup_swift_utilities_container_name }}"
+      state: absent
+    when: automated_docker_gitlab_action_backup_to_swift
+
+- block: # Remove GitLab backup container
+
+  - name: Remove GitLab backup container
+    docker_container:
+      name: "{{ automated_docker_gitlab_action_backup_container_name }}"
+      state: absent

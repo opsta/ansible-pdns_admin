@@ -1,0 +1,14 @@
+galaxy_info:
+  author: Jirayut Nimsaeng
+  description: Ansible role to launch OpenStack instances
+  license: MIT
+  min_ansible_version: 2.2
+  platforms:
+  - name: Ubuntu
+    versions:
+    - trusty
+    - xenial
+  galaxy_tags:
+    - openstack
+    - instance
+dependencies: []

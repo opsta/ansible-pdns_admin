@@ -1,0 +1,4 @@
+- name: Restart New Relic Service
+  service:
+    name: "{{ newrelic_service_name }}"
+    state: restarted

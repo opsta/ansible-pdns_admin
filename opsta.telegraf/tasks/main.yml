@@ -1,0 +1,3 @@
+---
+- include: telegraf_install.yml
+- include: telegraf_post.yml

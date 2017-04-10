@@ -1,0 +1,11 @@
+---
+- block: # Git clone fluentd configuration to container
+
+  - name: Clone fluentd configuration from "{{ automated_docker_fluentd_config_repository }}"
+    git:
+      repo: "{{ automated_docker_fluentd_config_repository }}"
+      dest: "{{ automated_docker_fluentd_config_path }}"
+      version: "{{ automated_docker_fluentd_config_branch_name }}"
+      accept_hostkey: yes
+    delegate_to: "{{ automated_docker_run.name }}"
+    notify: Restart container

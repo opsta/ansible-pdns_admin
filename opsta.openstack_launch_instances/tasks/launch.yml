@@ -1,0 +1,47 @@
+---
+
+- name: Reset volumes list variable
+  set_fact:
+    os_volumes_list: []
+  with_dict: "{{ os_instance.volumes | default({}) }}"
+
+- name: Create volumes list
+  set_fact:
+    os_volumes_list: "{{ os_volumes_list + [os_instance_name + '_' + item.key] }}"
+  with_dict: "{{ os_instance.volumes | default({}) }}"
+
+- name: Create volumes
+  os_volume:
+    state: present
+    size: "{{ item.value.size }}"
+    display_name: "{{ os_instance_name }}_{{ item.key }}"
+    display_description: "{{ item.key }} for {{ os_instance_name }} instance"
+  with_dict: "{{ os_instance.volumes | default({}) }}"
+
+- name: Launch OpenStack instance
+  os_server:
+    state: present
+    auto_ip: false
+    name: "{{ os_instance_name }}"
+    image: "{{ os_instance.image }}"
+    key_name: "{{ os_instance.key_name }}"
+    flavor: "{{ os_instance.flavor }}"
+    network: "{{ os_instance.network }}"
+    security_groups: "{{ os_instance.security_groups }}"
+    volume_size: "{{ os_instance.volume_size }}"
+    boot_from_volume: true
+    volumes: "{{ os_volumes_list }}"
+  register: openstack_instance
+
+- name: Add new instance to host group
+  add_host:
+    name: "{{ openstack_instance.openstack.name }}"
+    groups: "launched_openstack_instances,{{ group_names | join(',') }},{{ os_instance.groups }}"
+    ansible_user: "{{ os_instance.ansible_user }}"
+    host_preparation_host_name: "{{ openstack_instance.openstack.name }}"
+    ansible_host: "{{ openstack_instance.openstack.networks[os_instance.network][0] }}"
+    ansible_port: "{{ (openstack_instance.openstack.adminPass is defined) | ternary(22, os_ssh_port) }}"
+
+- name: Register instance information
+  set_fact:
+    os_instances: "{{ os_instances + [openstack_instance.openstack] }}"

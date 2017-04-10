@@ -1,0 +1,36 @@
+---
+automated_docker_container_default:
+  sensu_server:
+    name: "sensu-server"
+    hostname: "sensu-server"
+    image: "opsta/sensu-server:latest"
+    links:
+      - "{{ automated_docker_sensu_server_redis_container_name }}:redis"
+      - "{{ automated_docker_sensu_server_rabbitmq_container_name }}:rabbitmq"
+      - "{{ automated_docker_sensu_server_sensu_api_container_name }}:sensu-api"
+  sensu_api:
+    name: "sensu-api"
+    hostname: "sensu-api"
+    image: "opsta/sensu-api:latest"
+    published_ports:
+      - "4567:4567"
+  sensu_uchiwa:
+    name: "sensu-uchiwa"
+    hostname: "sensu-uchiwa"
+    image: "opsta/sensu-uchiwa:latest"
+    published_ports:
+      - "3000:3000"
+  rabbitmq:
+    name: "sensu-rabbitmq"
+    hostname: "sensu-rabbitmq"
+    image: "rabbitmq:3.6.5-management"
+    env:
+      RABBITMQ_DEFAULT_VHOST: sensu
+      RABBITMQ_DEFAULT_USER: sensu
+      RABBITMQ_DEFAULT_PASS: CHANGEME
+    published_ports:
+      - "15672:15672"
+  redis:
+    image: redis:3.2.5-alpine
+    name: redis
+    hostname: redis

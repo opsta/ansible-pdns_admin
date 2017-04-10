@@ -1,0 +1,22 @@
+---
+- block: # Check and install Docker Compose
+  - name: Check if docker compose version {{ docker_compose_install_version }} is installed
+    shell: |
+      docker-compose --version |
+      grep "version {{ docker_compose_install_version }},"
+    delegate_to: 127.0.0.1
+    ignore_errors: true
+    register: docker_compose_install_check
+
+  - name: Install Docker Compose if not installed
+    get_url:
+      url: "{{ docker_compose_install_url }}"
+      dest: "{{ docker_compose_install_path }}"
+      mode: 0755
+      force: yes
+    delegate_to: 127.0.0.1
+    become: true
+    when: docker_compose_install_check.rc != 0
+
+  tags:
+    - docker-compose-install

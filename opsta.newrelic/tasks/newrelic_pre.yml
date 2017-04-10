@@ -1,0 +1,24 @@
+- name: Check if New Relic agaent was installed
+  command: dpkg-query -l "{{ newrelic_package_name }}"
+  failed_when: false
+  register: newrelic_package_check
+  tags:
+    - newrelic-install
+
+- name: Add New Relic repository
+  lineinfile:
+    dest: /etc/apt/sources.list.d/newrelic.list
+    create: yes
+    line: "{{ newrelic_deb_repository }}"
+  when: newrelic_package_check is defined
+  tags:
+    - newrelic-install
+
+- name: Add New Relic repository key
+  apt_key:
+    url: "{{ newrelic_apt_key_url }}"
+    id: "{{ newrelic_apt_key_id }}"
+    state: present
+  when: newrelic_package_check is defined
+  tags:
+    - newrelic-install

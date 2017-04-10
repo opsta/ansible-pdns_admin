@@ -1,0 +1,8 @@
+---
+automated_docker_container_default:
+  apt_cacher_ng:
+    image: winggundamth/apt-cacher-ng:xenial
+    name: apt-cacher-ng
+    hostname: apt-cacher-ng
+    published_ports:
+      - "3142:3142"

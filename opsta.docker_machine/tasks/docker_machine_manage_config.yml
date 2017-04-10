@@ -1,0 +1,17 @@
+---
+- block: # Check machine file then search and replace configuration
+  - name: Check if machine exists
+    stat:
+      path: "{{ docker_machine_config_file }}"
+    register: docker_machine_host_check
+
+  - name: Search and replace Docker Machine configuration file
+    replace:
+      dest: "{{ docker_machine_config_file }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items: "{{ docker_machine_config_variables }}"
+    when: docker_machine_host_check.stat.exists == true
+
+  tags:
+    - docker-machine-manage-config

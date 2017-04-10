@@ -1,0 +1,15 @@
+galaxy_info:
+  author: Jirayut Nimsaeng
+  description: Ansible role to manage machines for Docker Machine
+  license: MIT
+  min_ansible_version: 2.0
+  platforms:
+  - name: Ubuntu
+    versions:
+    - trusty
+    - xenial
+  galaxy_tags:
+    - system
+    - docker
+    - dockermachine
+dependencies: []

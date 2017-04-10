@@ -1,0 +1,38 @@
+---
+- block: # Pre-generate client certificate
+
+  - name: Check if client certificate exists
+    stat:
+      path: "{{ docker_machine_client_certificate_file }}"
+    run_once: true
+    register: docker_machine_client_certificate_check
+
+  - name: Generate client certificate
+    shell: |
+      docker-machine create --driver none --url http://not-exist delete-me;
+      docker-machine rm -f delete-me
+    delegate_to: 127.0.0.1
+    run_once: true
+    when: not docker_machine_client_certificate_check.stat.exists
+
+
+- block: # Create Docker Machine
+
+  - name: Remove Docker Machine
+    command: docker-machine rm -f {{ inventory_hostname }}
+    delegate_to: 127.0.0.1
+    when: docker_machine_host_check.stat.exists and docker_machine_remove
+
+  - name: Create Docker Machine
+    command: |
+      docker-machine create --driver generic
+      --generic-ssh-user {{ ansible_user }}
+      --generic-ip-address {{ ansible_host }}
+      --generic-ssh-port {{ ansible_port }}
+      {{ docker_machine_extra_parameters|default('') }}
+      {{ inventory_hostname }}
+    delegate_to: 127.0.0.1
+    when: not docker_machine_host_check.stat.exists or docker_machine_remove
+
+  tags:
+    - docker-machine-create

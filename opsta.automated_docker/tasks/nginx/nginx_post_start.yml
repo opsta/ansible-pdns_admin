@@ -1,0 +1,68 @@
+---
+- block: # Check for nginx.conf
+
+  - name: Check if nginx configuration file is exists
+    stat:
+      path: "{{ automated_docker_nginx_host_config_file_path }}"
+    register: automated_docker_nginx_config_check
+
+
+- block: # Prepare container
+
+  - name: Install python and rsync
+    raw: "python --version || (apk update && apk add python) &&
+      rsync --version || apk add rsync"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: automated_docker_nginx_config_check.stat.exists
+
+  - name: Create nginx cache directory
+    file:
+      path: /var/lib/nginx/cache
+      state: directory
+    delegate_to: "{{ automated_docker_run.name }}"
+
+
+- block: # Copy all configuration files to nginx container
+
+  # NOTE Until synchronize module works with docker connection
+  # https://github.com/ansible/ansible-container/issues/226
+  # - name: Copy nginx configuration file
+  #   synchronize:
+  #     src: "{{ automated_docker_host_config_path }}/"
+  #     dest: "{{ automated_docker_nginx_config_path }}/"
+  #     delete: yes
+  #   delegate_to: "{{ automated_docker_run.name }}"
+  #   when: automated_docker_nginx_config_check.stat.exists
+  #   notify: Check nginx configuration and reload nginx
+
+  # TODO Still need to delete and recreate directory again until
+  # empty tag is coming here
+  # https://github.com/ansible/ansible-modules-core/issues/902
+  - name: Delete nginx configuration backup directory
+    file:
+      path: "{{ automated_docker_nginx_config_backup_path }}"
+      state: absent
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: automated_docker_nginx_config_check.stat.exists
+  - name: Create nginx configuration backup directory
+    file:
+      path: "{{ automated_docker_nginx_config_backup_path }}"
+      state: directory
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: automated_docker_nginx_config_check.stat.exists
+  # Need to use shell because command module doesn't support delegate_to
+  # docker container
+  - name: Backup current nginx configuration file
+    shell: "mv {{ automated_docker_nginx_config_path }}/* {{ automated_docker_nginx_config_backup_path }}/ || true"
+    delegate_to: "{{ automated_docker_run.name }}"
+    when: automated_docker_nginx_config_check.stat.exists
+
+  # Need to use docker cp because copy module does not support copy symlink file
+  - name: Copy new nginx configuration file
+    command: "docker cp {{ automated_docker_host_config_path }}/.
+      {{ automated_docker_run.name }}:{{ automated_docker_nginx_config_path }}"
+    when: automated_docker_nginx_config_check.stat.exists
+    environment: "{{ automated_docker_machine_environment | default({}) }}"
+    notify: Check nginx configuration and reload nginx
+
+  # TODO Backup and revert if check nginx configuration not passes

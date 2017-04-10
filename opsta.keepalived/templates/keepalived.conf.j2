@@ -1,0 +1,38 @@
+vrrp_script {{ keepalived_check_process_name }}_check_script {
+  script "killall -0 {{ keepalived_check_process_name }}"
+  interval "5"    # checking every "5" seconds (default: 5 seconds)
+  fall "3"        # require "3" failures for KO (default: 3)
+  rise "6"        # require "6" successes for OK (default: 6)
+}
+vrrp_script pingable_check_script {
+  script "ping -c 1 {{ keepalived_test_ping_ip }} 1>&2"
+  interval "10"   # checking every "10" seconds (default: 5 seconds)
+  fall "2"        # require "2" failures for KO (default: 3)
+  rise "4"        # require "4" successes for OK (default: 6)
+}
+
+vrrp_instance {{ keepalived_instance }} {
+  state {{ (inventory_hostname.split('-')[-1] == '1') | ternary('MASTER', 'BACKUP') }}
+  interface {{ keepalived_interface }}
+  virtual_router_id {{ keepalived_vri }}
+  priority 100
+  authentication {
+    auth_type PASS
+    auth_pass {{ keepalived_auth_pass }}
+  }
+  virtual_ipaddress {
+    {{ keepalived_vip }}/32 dev {{ keepalived_interface }}
+  }
+  unicast_src_ip {{ ansible_default_ipv4.address }}
+  unicast_peer {
+{% for host in groups[group_names[-1]] %}
+{% if hostvars[host].ansible_default_ipv4.address != ansible_default_ipv4.address %}
+    {{ hostvars[host].ansible_default_ipv4.address }}
+{% endif %}
+{% endfor %}
+  }
+  track_script {
+    pingable_check_script
+    {{ keepalived_check_process_name }}_check_script
+  }
+}

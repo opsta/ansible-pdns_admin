@@ -1,0 +1,55 @@
+---
+# NOTE Need to use docker command because docker registry image doesn't has python installed
+# TODO Use utilities container instead of docker command
+
+- block: # Check and register for HAProxy certificate path
+
+  - name: Set list of path to look for HAProxy certificate(s)
+    set_fact:
+      automated_docker_haproxy_ssl_certificate_paths: "{{ automated_docker_haproxy_ssl_certificate_paths }} + [ '{{ automated_docker_haproxy_ssl_certificate_path }}' ]"
+    with_items: "{{ group_names }}"
+    when: automated_docker_haproxy_ssl_certificate_pem_file is defined
+
+  - name: Check if HAProxy certificate path is exists
+    stat:
+      path: "{{ item }}"
+    register: automated_docker_haproxy_cert_check
+    with_first_found:
+      - files: "{{ automated_docker_haproxy_ssl_certificate_pem_file }}"
+        paths: "{{ automated_docker_haproxy_ssl_certificate_paths }}"
+        skip: true
+    when: automated_docker_haproxy_ssl_certificate_pem_file is defined
+  - name: Set HAproxy certificate path
+    set_fact:
+      automated_docker_haproxy_cert_stat: "{{ automated_docker_haproxy_cert_check.results[0].stat }}"
+    when: automated_docker_haproxy_cert_check.results[0].stat is defined
+
+- block: # Build variable for HAProxy template
+
+  - name: Get all server list from DNS-SD
+    set_fact:
+      automated_docker_haproxy_backend: "{{ lookup('dig', automated_docker_haproxy_srv_fqdn + '/SRV', 'flat=0', wantlist=True) }}"
+
+- block: # Copy SSL certificate files
+
+  - name: Copy HAProxy ssl certificate files
+    command: |
+      docker cp "{{ automated_docker_haproxy_cert_stat.path | dirname }}/." \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_haproxy_container_cert_path }}"
+    when: |
+      automated_docker_haproxy_cert_stat is defined and
+      automated_docker_haproxy_cert_stat.exists == true
+    notify: Check HAProxy configuration and reload HAProxy
+
+- block: # Copy HAProxy configuration file
+
+  - name: Create HAProxy configuration file
+    template:
+      src: "{{ automated_docker_haproxy_template_file }}"
+      dest: "{{ automated_docker_haproxy_host_tmp_config_path }}"
+
+  - name: Copy HAProxy configuration file to container
+    command: |
+      docker cp "{{ automated_docker_haproxy_host_tmp_config_path }}" \
+      "{{ automated_docker_run.name }}":"{{ automated_docker_haproxy_container_config_path }}"
+    notify: Check HAProxy configuration and reload HAProxy

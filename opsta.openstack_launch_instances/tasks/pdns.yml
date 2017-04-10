@@ -1,0 +1,26 @@
+---
+- name: Update PowerDNS A record
+  uri:
+    url: "{{ os_pdns_authoritative_server }}/api/v1/servers/localhost/zones/{{ os_pdns_domain }}."
+    method: PATCH
+    body: "{{ os_pdns_rrsets_a_record | to_json }}"
+    status_code: 204
+    body_format: json
+    headers:
+      X-API-Key: "{{ os_pdns_key_api }}"
+  with_items: "{{ groups['launched_openstack_instances'] }}"
+
+- name: Build PowerDNS SRV records
+  set_fact:
+    os_pdns_srv_records: "{{ os_pdns_srv_records + os_pdns_srv_record_template }}"
+  with_items: "{{ groups['launched_openstack_instances'] }}"
+
+- name: Update PowerDNS SRV record
+  uri:
+    url: "{{ os_pdns_authoritative_server }}/api/v1/servers/localhost/zones/{{ os_pdns_domain }}."
+    method: PATCH
+    body: "{{ os_pdns_rrsets_srv_record | to_json }}"
+    status_code: 204
+    body_format: json
+    headers:
+      X-API-Key: "{{ os_pdns_key_api }}"

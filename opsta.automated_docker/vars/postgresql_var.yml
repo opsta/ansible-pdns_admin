@@ -1,0 +1,13 @@
+---
+automated_docker_container_default:
+  postgresql:
+    image: postgres:9.6.2
+    name: postgresql
+    hostname: postgresql
+    # published_ports:
+    #  - "5432:5432"
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: CHANGEME
+      POSTGRES_DB: postgresdb
+    extensions: []

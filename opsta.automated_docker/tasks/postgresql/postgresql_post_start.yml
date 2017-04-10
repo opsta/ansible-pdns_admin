@@ -1,0 +1,30 @@
+---
+# NOTE Need to use docker command because mariadb container doesn't has python installed
+# TODO Use utilities container instead of docker command
+
+- block: # Wait until mariadb start finished
+
+  - name: Wait until postgresql container can connect
+    command: |
+      docker exec -u postgres "{{ automated_docker_run.name }}" \
+      sh -c 'psql -l || true'
+    register: automated_docker_postgresql_check_result
+    until: automated_docker_postgresql_check_result.stderr.find("could not connect to server") == -1
+    retries: 30
+    delay: 1
+
+  - name: Wait two more seconds
+    pause:
+      seconds: 2
+    when: automated_docker_create_result.changed
+
+- block: # Add postgresql extensions
+
+  - name: Add postgresql extension to the database
+    shell: |
+      docker exec -u postgres "{{ automated_docker_run.name }}" \
+      psql -d "{{ automated_docker_run.env.POSTGRES_DB }}" \
+      -c "CREATE EXTENSION IF NOT EXISTS {{ item }};"
+    when: automated_docker_run.extensions is defined
+    with_items:
+      - "{{ automated_docker_run.extensions }}"
