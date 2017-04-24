@@ -1,6 +1,0 @@
----
-- name: Install nginx
-  apt:
-     pkg: "{{ nginx_service_name }}"
-     state: latest
-     update_cache: yes

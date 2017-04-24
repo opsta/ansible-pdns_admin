@@ -1,0 +1,58 @@
+---
+- name: apt update
+  apt:
+    update_cache: yes
+
+- name: Install list of packages
+  apt:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+    - curl
+    - git
+    - python
+    - libpython2.7
+    - python-dev
+    - libsasl2-dev
+    - build-essential
+    - libmariadb2
+    - libmariadb-client-lgpl-dev
+    - libssl-dev
+    - libldap2-dev
+    - libmysqlclient-dev
+
+- name: Get pip
+  shell: curl https://bootstrap.pypa.io/get-pip.py | python
+
+- name: Creates directory
+  file:
+    path: /var/www
+    state: directory
+
+- name: Git clone power admin
+  git:
+    repo: "{{ pdns_admin_git_repo_url }}"
+    dest: "{{ pdns_admin_path }}"
+
+- name: Install virtualenv
+  pip:
+    name: virtualenv
+
+- name: Create virtualenv
+  command: "virtualenv {{ pdns_admin_python_venv_path }}"
+
+- name: pip install
+  pip:
+    requirements: "{{ pdns_admin_path }}/requirements.txt"
+    virtualenv: "{{ pdns_admin_python_venv_path }}"
+
+- name: pip install mysql-python
+  pip:
+    name: mysql-python
+
+- name: copy config.py
+  command: "cp {{ pdns_admin_path }}/config_template.py {{ pdns_admin_path }}/config.py"
+
+# TODO: Run at the frist time only
+# - name: Initial DB for PowerDNS Admin
+#   command: python /var/www/powerdns-admin/create_db.py

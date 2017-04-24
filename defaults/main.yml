@@ -1,0 +1,24 @@
+---
+pdns_admin_service_name: powerdns
+pdns_admin_git_repo_url: https://github.com/ngoduykhanh/PowerDNS-Admin.git
+
+pdns_admin_path: /var/www/powerdns-admin
+
+pdns_admin_conf_filename: pdns_admin.conf
+pdns_admin_conf_filepath: "{{ pdns_admin_path }}/{{ pdns_admin_conf_filename }}"
+
+pdns_admin_systemd_filepath: /etc/systemd/system/powerdns-admin.service
+
+pdns_admin_python_venv_path: /opt/vens/powerdns
+pdns_admin_python_path: "{{ pdns_admin_python_venv_path }}/bin/python"
+
+### pdns.conf
+secret_key: CHANGEME
+bind_address: 0.0.0.0
+sqla_db_user: pdns
+sqla_db_password: CHANGEME
+sqla_db_host: 10.78.0.16
+sqla_db_name: pdns
+pdns_stats_url: http://10.78.0.16:8081
+pdns_api_key: CHANGEME
+pdns_version: 4.0.3

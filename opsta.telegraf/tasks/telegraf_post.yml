@@ -1,8 +1,0 @@
----
-- block: # Copy Telegraf configuration file
-
-  - name: Copy Telegraf configuration file
-    template:
-      src: "{{ telegraf_template_file }}"
-      dest: "{{ telegraf_config_path }}"
-    notify: Restart Telegraf service

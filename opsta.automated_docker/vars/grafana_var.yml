@@ -1,8 +1,0 @@
----
-automated_docker_container_default:
-  grafana:
-    image: grafana/grafana:4.1.1
-    name: grafana
-    hostname: grafana
-    published_ports:
-      - "3000:3000"

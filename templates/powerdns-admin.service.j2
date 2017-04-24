@@ -1,0 +1,14 @@
+[Unit]
+Description=PowerDNS-Admin
+After=network-online.target
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart="{{ pdns_admin_python_path }} {{pdns_admin_path}}/run.py"
+WorkingDirectory="{{ pdns_admin_path }}"
+Environment="{{ pdns_admin_path }}"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

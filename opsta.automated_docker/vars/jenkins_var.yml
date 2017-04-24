@@ -1,9 +1,0 @@
----
-automated_docker_container_default:
-  jenkins:
-    image: jenkins:2.32.1-alpine
-    name: jenkins
-    hostname: jenkins
-    published_ports:
-      - "8080:8080"
-      - "50000:50000"
