@@ -5,7 +5,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 WTF_CSRF_ENABLED = True
 SECRET_KEY = "{{ secret_key }}"
 BIND_ADDRESS = "{{ bind_address }}"
-PORT = 9393
+PORT = {{ bind_port }}
 LOGIN_TITLE = "PDNS"
 
 # TIMEOUT - for large zones
@@ -13,7 +13,7 @@ TIMEOUT = 10
 
 # LOG CONFIG
 LOG_LEVEL = 'DEBUG'
-LOG_FILE = 'logfile.log'
+LOG_FILE = 'pdns-admin.log'
 # For Docker, leave empty string
 #LOG_FILE = ''
 

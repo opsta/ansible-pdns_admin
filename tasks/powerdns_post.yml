@@ -1,14 +1,14 @@
 ---
-- name: Copy pdns.cnf
+- name: Copy {{ pdns_admin_conf_filename }}
   template:
-    src: pdns.conf.j2
+    src: "{{ pdns_admin_conf_template_filename }}"
     dest: "{{ pdns_admin_conf_filepath }}"
     owner: root
     group: root
 
-- name: Make PowerDNS as service
+- name: Make PowerDNS Admin as service
   template:
-    src: powerdns-admin.service.j2
+    src: "{{ pdns_admin_systemd_template_filename }}"
     dest: "{{ pdns_admin_systemd_filepath }}"
     owner: root
     group: root
