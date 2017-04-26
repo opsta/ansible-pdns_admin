@@ -12,3 +12,9 @@
     dest: "{{ pdns_admin_systemd_filepath }}"
     owner: root
     group: root
+
+- name: Run Create DB
+  shell: /var/www/powerdns-admin/create_db.py
+
+- name: Run Powerdns Admin
+  shell: /var/www/powerdns-admin/run.py
