@@ -5,10 +5,20 @@
     dest: "{{ pdns_admin_conf_filepath }}"
     owner: root
     group: root
+  notify: Restart Powerdns Admin Service
 
-- name: Make PowerDNS Admin as service
+- name: Drop PowerDNS Admin systemd file
   template:
     src: "{{ pdns_admin_systemd_template_filename }}"
     dest: "{{ pdns_admin_systemd_filepath }}"
     owner: root
     group: root
+  register: _systemd
+
+- name: Make PowerDNS Admin as service
+  systemd:
+    name: "{{ pdns_admin_systemd_filename }}"
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  when: _systemd.changed
