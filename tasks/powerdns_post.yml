@@ -22,3 +22,7 @@
     enabled: yes
     daemon_reload: yes
   when: _systemd.changed
+
+- name: Run Create DB
+  shell: /var/www/powerdns-admin/create_db.py
+
