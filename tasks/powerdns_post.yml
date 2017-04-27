@@ -7,6 +7,9 @@
     group: root
   notify: Restart Powerdns Admin Service
 
+  tags:
+    - generate-config
+
 - name: Drop PowerDNS Admin systemd file
   template:
     src: "{{ pdns_admin_systemd_template_filename }}"
@@ -24,5 +27,4 @@
   when: _systemd.changed
 
 - name: Run Create DB
-  shell: /var/www/powerdns-admin/create_db.py
-
+  shell: "{{ pdns_admin_python_path }} /var/www/powerdns-admin/create_db.py"

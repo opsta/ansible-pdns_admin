@@ -33,15 +33,13 @@ global:
   secret_key: CHANGEME
   bind_address: 0.0.0.0
   port: 9393
-  login_title: 'rolem'
+  login_title: PowerDNS
   timeout: 10
   # LOG CONFIG
-  log_level: 'DEBUG'
-  log_file: 'pdns-admin.log'
+  log_level: DEBUG
+  log_file: pdns-admin.log
   # For Docker, leave empty string
   #log_file: ''
-  # Upload
-  upload_dir: os.path.join(basedir, 'upload')
   #default auth
   basic_enabled: true
   signup_enabled: true
@@ -49,57 +47,52 @@ global:
 database:
   # DATABASE CONFIG
   #You'll need MySQL-python
-  sqla_db_user: "pdns"
-  sqla_db_password: "CHANGEME"
-  sqla_db_host: "10.78.0.16"
+  sqla_db_user: opsta
+  sqla_db_password: opstaThailand
+  sqla_db_host: 10.77.77.6
   sqla_db_name: pdns
-  #mysql
-  sqlalchemy_database_uri: >-
-    'mysql://'+{{ sqla_db_user }}+':'
-    +{{ sqla_db_password }}+'@'+{{ sqla_db_host }}+'/'+{{ sqla_db_name }}
   #sqlite
   #sqlalchemy_database_uri: 'sqlite:////path/to/your/pdns.db'
-  sqlalchemy_migrate_repo: os.path.join(basedir, 'db_repository')
   sqlalchemy_track_modifications: true
 
 authentications:
   ldap:
     # ldap config
-    ldap_type: 'ldap'
-    ldap_uri: 'ldaps://your-ldap-server:636'
-    ldap_username: 'cn=dnsuser,ou=users,ou=services,dc=duykhanh,dc=me'
-    ldap_password: 'dnsuser'
-    ldap_search_base: 'ou=system admins,ou=people,dc=duykhanh,dc=me'
+    ldap_type: ldap
+    ldap_uri: ldaps://your-ldap-server:636
+    ldap_username: cn=dnsuser,ou=users,ou=services,dc=duykhanh,dc=me
+    ldap_password: dnsuser
+    ldap_search_base: ou=system admins,ou=people,dc=duykhanh,dc=me
     # additional options only if ldap_type=ldap
-    ldap_usernamefield: 'uid'
-    ldap_filter: '(objectclass=inetorgperson)' 
-  #ad:
-    ## ad config
-    #ldap_type: 'ad'
-    #ldap_uri: 'ldaps://your-ad-server:636'
-    #ldap_username: 'cn=dnsuser,ou=users,dc=domain,dc=local'
-    #ldap_password: 'dnsuser'
-    #ldap_search_base: 'dc=domain,dc=local'
-    ## you may prefer 'userprincipalname' instead
-    #ldap_usernamefield: 'samaccountname'
-    ## ad group that you would like to have accesss to web app
-    #ldap_filter: 'memberof=cn=dns_users,ou=groups,dc=domain,dc=local'
+    ldap_usernamefield: uid
+    ldap_filter: (objectclass=inetorgperson)
+  # ad:
+  #   # ad config
+  #   ldap_type: 'ad'
+  #   ldap_uri: 'ldaps://your-ad-server:636'
+  #   ldap_username: 'cn=dnsuser,ou=users,dc=domain,dc=local'
+  #   ldap_password: 'dnsuser'
+  #   ldap_search_base: 'dc=domain,dc=local'
+  #   # you may prefer 'userprincipalname' instead
+  #   ldap_usernamefield: 'samaccountname'
+  #   # ad group that you would like to have accesss to web app
+  #   ldap_filter: 'memberof=cn=dns_users,ou=groups,dc=domain,dc=local'
   github:
     # github oauth
     github_oauth_enable: false
-    github_oauth_key: 'g0j1q15arsn36b3ad6nwkliybeirrupu8ndd1woc'
-    github_oauth_secret: '0wyrkwepebdkxlezzhfbdn1pbncwea0vcwvfvy6iltgeplpt7wfulaa9szgm'
-    github_oauth_scope: 'email'
-    github_oauth_url: 'http://127.0.0.1:5000/api/v3/'
-    github_oauth_token: 'http://127.0.0.1:5000/oauth/token'
-    github_oauth_authorize: 'http://127.0.0.1:5000/oauth/authorize'
+    github_oauth_key: g0j1q15arsn36b3ad6nwkliybeirrupu8ndd1woc
+    github_oauth_secret: 0wyrkwepebdkxlezzhfbdn1pbncwea0vcwvfvy6iltgeplpt7wfulaa9szgm
+    github_oauth_scope: email
+    github_oauth_url: http://127.0.0.1:5000/api/v3/
+    github_oauth_token: http://127.0.0.1:5000/oauth/token
+    github_oauth_authorize: http://127.0.0.1:5000/oauth/authorize
 
 powerdns:
   # powerdns config
-  pdns_stats_url: "http://10.78.0.16:8081"
-  pdns_api_key: "CHANGEME"
-  pdns_version: "4.0.3"
+  pdns_stats_url: http://10.77.77.6:8081
+  pdns_api_key: CHANGEME
+  pdns_version: 4.0.3
   # records allowed to edit
-  records_allow_edit: "['a', 'aaaa', 'cname', 'spf', 'ptr', 'mx', 'txt']"
+  records_allow_edit: ['a', 'aaaa', 'cname', 'spf', 'ptr', 'mx', 'txt']
   # experimental features
   pretty_ipv6_ptr: false

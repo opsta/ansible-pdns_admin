@@ -1,40 +1,86 @@
-#jinja2: lstrip_blocks: True, trim_blocks: True, keep_trailing_newline: True
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 {% for key, value in global.iteritems() %}
+{% if value is not mapping %}
+{% if value is sequence and value is not string %}
+{% if value[0] is number %}
+{{ key | upper }} = [ {{ value|join(', ') }} ]
+{% else %}
+{{ key | upper }} = [ "{{ value|join('", "') }}" ]
+{% endif %}
+{% else %}
 {% if value == "true" or value == "false" or value is number %}
 {{ key | upper }} = {{ value }}
 {% else %}
 {{ key | upper }} = "{{ value }}"
 {% endif %}
+{% endif %}
+{% endif %}
 {% endfor %}
+# Upload
+UPLOAD_DIR = os.path.join(basedir, 'upload')
+
 
 {% for key, value in database.iteritems() %}
+{% if value is not mapping %}
+{% if value is sequence and value is not string %}
+{% if value[0] is number %}
+{{ key | upper }} = [ {{ value|join(', ') }} ]
+{% else %}
+{{ key | upper }} = [ "{{ value|join('", "') }}" ]
+{% endif %}
+{% else %}
 {% if value == "true" or value == "false" or value is number %}
 {{ key | upper }} = {{ value }}
 {% else %}
 {{ key | upper }} = "{{ value }}"
 {% endif %}
+{% endif %}
+{% endif %}
 {% endfor %}
+#MySQL
+SQLALCHEMY_DATABASE_URI = 'mysql://'+SQLA_DB_USER+':'\
+    +SQLA_DB_PASSWORD+'@'+SQLA_DB_HOST+'/'+SQLA_DB_NAME
+#SQLite
+#SQLALCHEMY_DATABASE_URI = 'sqlite:////path/to/your/pdns.db'
+SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
+
 
 {% for auth in authentications.values() %}
 {% for key, value in auth.items() %}
+{% if value is not mapping %}
+{% if value is sequence and value is not string %}
+{% if value[0] is number %}
+{{ key | upper }} = [ {{ value|join(', ') }} ]
+{% else %}
+{{ key | upper }} = [ "{{ value|join('", "') }}" ]
+{% endif %}
+{% else %}
 {% if value == "true" or value == "false" or value is number %}
 {{ key | upper }} = {{ value }}
 {% else %}
 {{ key | upper }} = "{{ value }}"
+{% endif %}
+{% endif %}
 {% endif %}
 {% endfor %}
 {% endfor %}
 
 {% for key, value in powerdns.iteritems() %}
+{% if value is not mapping %}
+{% if value is sequence and value is not string %}
+{% if value[0] is number %}
+{{ key | upper }} = [ {{ value|join(', ') }} ]
+{% else %}
+{{ key | upper }} = [ "{{ value|join('", "') }}" ]
+{% endif %}
+{% else %}
 {% if value == "true" or value == "false" or value is number %}
 {{ key | upper }} = {{ value }}
 {% else %}
 {{ key | upper }} = "{{ value }}"
 {% endif %}
+{% endif %}
+{% endif %}
 {% endfor %}
-
-
-
