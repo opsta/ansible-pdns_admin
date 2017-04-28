@@ -93,6 +93,6 @@ powerdns:
   pdns_api_key: CHANGEME
   pdns_version: 4.0.3
   # records allowed to edit
-  records_allow_edit: ['a', 'aaaa', 'cname', 'spf', 'ptr', 'mx', 'txt']
+  records_allow_edit: ['A', 'AAAA', 'CNAME', 'SPF', 'PTR', 'MX', 'TXT']
   # experimental features
   pretty_ipv6_ptr: false
