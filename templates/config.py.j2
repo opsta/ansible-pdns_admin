@@ -2,7 +2,7 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 {% for key, value in global.iteritems() %}
-{% if {{ key | upper }} not in ["UPLOAD_DIR"] %}
+{% if key | upper not in ["UPLOAD_DIR"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
 {% if value[0] is number %}
@@ -25,7 +25,7 @@ UPLOAD_DIR = os.path.join(basedir, 'upload')
 
 
 {% for key, value in database.iteritems() %}
-{% if {{ key | upper }} not in ["SQLALCHEMY_DATABASE_URI", "SQLALCHEMY_MIGRATE_REPO"] %}
+{% if key | upper not in ["SQLALCHEMY_DATABASE_URI", "SQLALCHEMY_MIGRATE_REPO"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
 {% if value[0] is number %}
@@ -50,7 +50,7 @@ SQLALCHEMY_DATABASE_URI = 'mysql://'+SQLA_DB_USER+':'\
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 
-{% for auth in authentications.values() %}
+{% for auth in external_auth.values() %}
 {% for key, value in auth.items() %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -71,7 +71,7 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endfor %}
 
 {% for key, value in powerdns.iteritems() %}
-{% if {{ key | upper }} not in ["RECORDS_ALLOW_EDIT"] %}
+{% if key | upper not in ["RECORDS_ALLOW_EDIT"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
 {% if value[0] is number %}
@@ -91,4 +91,4 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endfor %}
 
 # RECORDS ALLOWED TO EDIT
-RECORDS_ALLOW_EDIT = {{ powerdns.records_allow_edit }}
+RECORDS_ALLOW_EDIT = [ "{{ powerdns.records_allow_edit | join('", "') }}" ]
