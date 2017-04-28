@@ -28,3 +28,5 @@
 
 - name: Run Create DB
   shell: "{{ pdns_admin_python_path }} /var/www/powerdns-admin/create_db.py"
+  when:
+    - inventory_hostname in groups['pdns-int-master', 'pdns-pub-master', 'pdns-master']
