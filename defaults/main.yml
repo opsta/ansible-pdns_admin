@@ -47,15 +47,15 @@ global:
 database:
   # DATABASE CONFIG
   #You'll need MySQL-python
-  sqla_db_user: opsta
+  sqla_db_user: pdns
   sqla_db_password: opstaThailand
-  sqla_db_host: 10.77.77.6
+  sqla_db_host: 10.78.0.16
   sqla_db_name: pdns
   #sqlite
   #sqlalchemy_database_uri: 'sqlite:////path/to/your/pdns.db'
   sqlalchemy_track_modifications: true
 
-authentications:
+external_auth:
   ldap:
     # ldap config
     ldap_type: ldap
@@ -89,7 +89,7 @@ authentications:
 
 powerdns:
   # powerdns config
-  pdns_stats_url: http://10.77.77.6:8081
+  pdns_stats_url: http://10.78.0.16:8081
   pdns_api_key: CHANGEME
   pdns_version: 4.0.3
   # records allowed to edit
