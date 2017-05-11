@@ -6,9 +6,8 @@
     owner: root
     group: root
   notify: Restart Powerdns Admin Service
-
   tags:
-    - generate-config
+    - pdns-admin-config
 
 - name: Run Create DB
   shell: "{{ pdns_admin_python_path }} /var/www/powerdns-admin/create_db.py"
@@ -19,7 +18,6 @@
     dest: "{{ pdns_admin_systemd_filepath }}"
     owner: root
     group: root
-  register: _systemd
 
 - name: Make PowerDNS Admin as service
   systemd:

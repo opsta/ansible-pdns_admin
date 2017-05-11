@@ -1,7 +1,9 @@
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-{% for key, value in global.iteritems() %}
+
+{% if pdns_admin_global_config is defined %}
+{% for key, value in pdns_admin_global_config.iteritems() %}
 {% if key | upper not in ["UPLOAD_DIR"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -22,9 +24,11 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 {% endfor %}
 # Upload
 UPLOAD_DIR = os.path.join(basedir, 'upload')
+{% endif %}
 
 
-{% for key, value in database.iteritems() %}
+{% if pdns_admin_database_config is defined %}
+{% for key, value in pdns_admin_database_config.iteritems() %}
 {% if key | upper not in ["SQLALCHEMY_DATABASE_URI", "SQLALCHEMY_MIGRATE_REPO"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -48,9 +52,11 @@ SQLALCHEMY_DATABASE_URI = 'mysql://'+SQLA_DB_USER+':'\
     +SQLA_DB_PASSWORD+'@'+SQLA_DB_HOST+'/'+SQLA_DB_NAME
 #SQLite
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
+{% endif %}
 
 
-{% for auth in external_auth.values() %}
+{% if pdns_admin_external_auth_config is defined %}
+{% for auth in pdns_admin_external_auth_config.values() %}
 {% for key, value in auth.items() %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -69,8 +75,11 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endif %}
 {% endfor %}
 {% endfor %}
+{% endif %}
 
-{% for key, value in powerdns.iteritems() %}
+
+{% if pdns_admin_main_config is defined %}
+{% for key, value in pdns_admin_main_config.iteritems() %}
 {% if key | upper not in ["RECORDS_ALLOW_EDIT"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -89,6 +98,8 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endif %}
 {% endif %}
 {% endfor %}
+{% endif %}
+
 
 # RECORDS ALLOWED TO EDIT
-RECORDS_ALLOW_EDIT = [ "{{ powerdns.records_allow_edit | join('", "') }}" ]
+RECORDS_ALLOW_EDIT = [ "{{ pdns_admin_main_config.records_allow_edit | join('", "') }}" ]
