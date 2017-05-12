@@ -1,8 +1,4 @@
-- name: Restart Powerdns Service
-  service:
-    name: "{{ powerdns_service_name }}"
-    state: restarted
-
+---
 - name: Restart Powerdns Admin Service
   systemd:
     name: "{{ pdns_admin_systemd_filename }}"
