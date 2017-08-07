@@ -1,0 +1,16 @@
+---
+pdns_admin_packages:
+  - curl
+  - git
+  - python
+  - python-devel
+  - cyrus-sasl-devel
+  - autoconf
+  - automake
+  - make
+  - gcc
+  - gcc-c++
+  - mariadb-libs
+  - mariadb-devel
+  - openssl-devel
+  - openldap-devel
