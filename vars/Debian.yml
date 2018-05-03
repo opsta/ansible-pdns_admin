@@ -1,0 +1,14 @@
+---
+pdns_admin_packages:
+  - curl
+  - git
+  - python
+  - libpython2.7
+  - python-dev
+  - libsasl2-dev
+  - build-essential
+  - libmariadb2
+  - libmariadb-client-lgpl-dev
+  - libssl-dev
+  - libldap2-dev
+  - libmysqlclient-dev
