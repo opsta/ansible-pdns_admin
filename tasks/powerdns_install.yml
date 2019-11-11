@@ -4,23 +4,20 @@
 
 - name: Install required packages in Redhat derivatives
   yum:
-    name: "{{ item }}"
-    state: installed
-  with_items:
-    - "{{ pdns_admin_packages }}"
+    name: "{{ pdns_admin_packages }}"
+    state: present
   when: ansible_os_family == 'RedHat'
 
 - name: Install required packages in Debian derivatives
   apt:
-    name: "{{ item }}"
-    state: installed
+    name: "{{ pdns_admin_packages }}"
+    state: present
     update_cache: yes
-  with_items:
-    - "{{ pdns_admin_packages }}"
   when: ansible_os_family == 'Debian'
 
-- name: Install Python PIP
-  shell: pip --version || curl https://bootstrap.pypa.io/get-pip.py | python
+#- name: Install Python PIP
+#  shell: pip --version || curl https://bootstrap.pypa.io/get-pip.py | python
+# install with OS method
 
 - name: Create "{{ pdns_admin_root_path }}" directory
   file:
@@ -35,14 +32,16 @@
 - name: Install virtualenv
   pip:
     name: virtualenv
+    executable: pip3
 
 - name: PIP install requirements for PowerDNS Admin
   pip:
     requirements: "{{ pdns_admin_requirements_path }}"
     virtualenv: "{{ pdns_admin_python_venv_path }}"
+    virtualenv_python: python3
 
 - name: Install some more required packages
   pip:
-    name: "{{ item }}"
+    name: "{{ pdns_admin_pip_packages }}"
     virtualenv: "{{ pdns_admin_python_venv_path }}"
-  with_items: "{{ pdns_admin_pip_packages }}"
+    virtualenv_python: python3

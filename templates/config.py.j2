@@ -47,12 +47,13 @@ UPLOAD_DIR = os.path.join(basedir, 'upload')
 {% endif %}
 {% endif %}
 {% endfor %}
-#MySQL
-SQLALCHEMY_DATABASE_URI = 'mysql://'+SQLA_DB_USER+':'\
-    +SQLA_DB_PASSWORD+'@'+SQLA_DB_HOST+'/'+SQLA_DB_NAME
+SQLALCHEMY_DATABASE_URI = {{ pdns_admin_database_config.sqlalchemy_database_uri }}
+{% endif %}
+
+
 #SQLite
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
-{% endif %}
+
 
 
 {% if pdns_admin_external_auth_config is defined %}
@@ -99,7 +100,6 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endif %}
 {% endfor %}
 {% endif %}
-
 
 # RECORDS ALLOWED TO EDIT
 RECORDS_ALLOW_EDIT = [ "{{ pdns_admin_main_config.records_allow_edit | join('", "') }}" ]

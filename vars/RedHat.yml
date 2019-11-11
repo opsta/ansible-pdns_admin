@@ -14,3 +14,5 @@ pdns_admin_packages:
   - mariadb-devel
   - openssl-devel
   - openldap-devel
+
+yarn_executable: yarn

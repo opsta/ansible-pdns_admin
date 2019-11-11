@@ -9,8 +9,39 @@
   tags:
     - pdns-admin-config
 
-- name: Run Create DB
-  shell: "{{ pdns_admin_python_path }} /var/www/powerdns-admin/create_db.py"
+# ain't no more
+# - name: Run Create DB
+#   shell: "{{ pdns_admin_python_path }} /var/www/powerdns-admin/create_db.py"
+
+- name: Create sqlite DB with Flask. Initdb only once
+  shell: "export FLASK_APP=app/__init__.py; {{ pdns_admin_python_venv_path }}/bin/{{ item }}"
+  args:
+    chdir: "{{ pdns_admin_path }}"
+    creates: "{{ pdns_admin_sqlite_path }}"
+  with_items:
+    - flask db upgrade
+    - flask db migrate -m "Init DB"
+  when: '"sqlite" in pdns_admin_database_config.sqlalchemy_database_uri'
+
+- name: Create DB with Flask. Initdb only once
+  shell: "export FLASK_APP=app/__init__.py; {{ pdns_admin_python_venv_path }}/bin/{{ item }}"
+  args:
+    chdir: "{{ pdns_admin_path }}"
+    creates: "{{ pdns_admin_path }}/db_is_initialized_flag"
+  with_items:
+    - flask db upgrade
+    - flask db migrate -m "Init DB"
+  when: '"sqlite" not in pdns_admin_database_config.sqlalchemy_database_uri'
+
+- name: Yarn install node dependencies
+  shell: "{{ yarn_executable }} install --pure-lockfile"
+  args:
+    chdir: "{{ pdns_admin_path }}"
+
+- name: Build Flask assets
+  shell: "export FLASK_APP=app/__init__.py; {{ pdns_admin_python_venv_path }}/bin/flask assets build"
+  args:
+    chdir: "{{ pdns_admin_path }}"
 
 - name: Drop PowerDNS Admin systemd file
   template:

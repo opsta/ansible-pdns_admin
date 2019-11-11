@@ -2,13 +2,20 @@
 pdns_admin_packages:
   - curl
   - git
-  - python
+  - python3
+  - python3-pip
   - libpython2.7
   - python-dev
   - libsasl2-dev
   - build-essential
-  - libmariadb2
-  - libmariadb-client-lgpl-dev
+  - libmariadb3
+  - libmariadbclient-dev
   - libssl-dev
   - libldap2-dev
-  - libmysqlclient-dev
+  - default-libmysqlclient-dev
+  - libxmlsec1-dev
+  - pkg-config
+  - nodejs
+  - yarnpkg
+
+yarn_executable: yarnpkg
