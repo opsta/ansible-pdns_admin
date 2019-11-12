@@ -1,6 +1,4 @@
 ---
-- name: Add the OS specific variables
-  include_vars: "{{ ansible_os_family }}.yml"
 
 - name: Install required packages in Redhat derivatives
   yum:
