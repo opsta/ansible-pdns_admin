@@ -8,6 +8,8 @@ Group=root
 ExecStart={{ pdns_admin_python_path }} {{pdns_admin_path}}/run.py
 WorkingDirectory={{ pdns_admin_path }}
 Environment="PATH={{ pdns_admin_path }}"
+Environment="FLASK_APP=powerdnsadmin/__init__.py"
+Environment="FLASK_CONF=../config.py"
 Restart=always
 
 [Install]

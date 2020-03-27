@@ -27,11 +27,6 @@
     repo: "{{ pdns_admin_git_repo_url }}"
     dest: "{{ pdns_admin_path }}"
 
-- name: Install virtualenv
-  pip:
-    name: virtualenv
-    executable: pip3
-
 - name: PIP install requirements for PowerDNS Admin
   pip:
     requirements: "{{ pdns_admin_requirements_path }}"

@@ -14,7 +14,7 @@
 #   shell: "{{ pdns_admin_python_path }} /var/www/powerdns-admin/create_db.py"
 
 - name: Create sqlite DB with Flask. Initdb only once
-  shell: "export FLASK_APP=app/__init__.py; {{ pdns_admin_python_venv_path }}/bin/{{ item }}"
+  shell: "export FLASK_APP=powerdnsadmin/__init__.py; export FLASK_CONF=../{{ pdns_admin_conf_filename }}; {{ pdns_admin_python_venv_path }}/bin/{{ item }}"
   args:
     chdir: "{{ pdns_admin_path }}"
     creates: "{{ pdns_admin_sqlite_path }}"
@@ -24,7 +24,7 @@
   when: '"sqlite" in pdns_admin_database_config.sqlalchemy_database_uri'
 
 - name: Create DB with Flask. Initdb only once
-  shell: "export FLASK_APP=app/__init__.py; {{ pdns_admin_python_venv_path }}/bin/{{ item }}"
+  shell: "export FLASK_APP=powerdnsadmin/__init__.py; export FLASK_CONF=../{{ pdns_admin_conf_filename }}; {{ pdns_admin_python_venv_path }}/bin/{{ item }}"
   args:
     chdir: "{{ pdns_admin_path }}"
     creates: "{{ pdns_admin_path }}/db_is_initialized_flag"
@@ -39,7 +39,7 @@
     chdir: "{{ pdns_admin_path }}"
 
 - name: Build Flask assets
-  shell: "export FLASK_APP=app/__init__.py; {{ pdns_admin_python_venv_path }}/bin/flask assets build"
+  shell: "export FLASK_APP=powerdnsadmin/__init__.py; export FLASK_CONF=../{{ pdns_admin_conf_filename }}; {{ pdns_admin_python_venv_path }}/bin/flask assets build"
   args:
     chdir: "{{ pdns_admin_path }}"
 
