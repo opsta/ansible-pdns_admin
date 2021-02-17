@@ -2,8 +2,8 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-{% if pdns_admin_global_config is defined %}
-{% for key, value in pdns_admin_global_config.iteritems() %}
+{% if pdns_admin__global_config is defined %}
+{% for key, value in pdns_admin__global_config.items() %}
 {% if key | upper not in ["UPLOAD_DIR"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -27,8 +27,8 @@ UPLOAD_DIR = os.path.join(basedir, 'upload')
 {% endif %}
 
 
-{% if pdns_admin_database_config is defined %}
-{% for key, value in pdns_admin_database_config.iteritems() %}
+{% if pdns_admin__database_config is defined %}
+{% for key, value in pdns_admin__database_config.items() %}
 {% if key | upper not in ["SQLALCHEMY_DATABASE_URI", "SQLALCHEMY_MIGRATE_REPO"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -47,17 +47,16 @@ UPLOAD_DIR = os.path.join(basedir, 'upload')
 {% endif %}
 {% endif %}
 {% endfor %}
-SQLALCHEMY_DATABASE_URI = {{ pdns_admin_database_config.sqlalchemy_database_uri }}
+#MySQL
+SQLALCHEMY_DATABASE_URI = 'mysql://'+SQLA_DB_USER+':'\
+    +SQLA_DB_PASSWORD+'@'+SQLA_DB_HOST+'/'+SQLA_DB_NAME
+#SQLite
+SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endif %}
 
 
-#SQLite
-SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
-
-
-
-{% if pdns_admin_external_auth_config is defined %}
-{% for auth in pdns_admin_external_auth_config.values() %}
+{% if pdns_admin__external_auth_config is defined %}
+{% for auth in pdns_admin__external_auth_config.values() %}
 {% for key, value in auth.items() %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -79,8 +78,8 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endif %}
 
 
-{% if pdns_admin_main_config is defined %}
-{% for key, value in pdns_admin_main_config.iteritems() %}
+{% if pdns_admin__main_config is defined %}
+{% for key, value in pdns_admin__main_config.items() %}
 {% if key | upper not in ["RECORDS_ALLOW_EDIT"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
@@ -101,5 +100,9 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endfor %}
 {% endif %}
 
+
 # RECORDS ALLOWED TO EDIT
-RECORDS_ALLOW_EDIT = [ "{{ pdns_admin_main_config.records_allow_edit | join('", "') }}" ]
+RECORDS_ALLOW_EDIT = [ "{{ pdns_admin__main_config.records_allow_edit | join('", "') }}" ]
+# SAML Authnetication
+SAML_ENABLED = False
+SAML_ASSERTION_ENCRYPTED = True

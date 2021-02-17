@@ -1,5 +1,10 @@
 ---
 - name: Restart Powerdns Admin Service
   systemd:
-    name: "{{ pdns_admin_systemd_filename }}"
+    name: "{{ pdns_admin__systemd_filename }}"
     state: restarted
+- name: pdns_admin__docker_restart
+  docker_compose:
+    project_src: "{{ pdns_admin__docker_compose_dir }}"
+    state: present
+    restarted: true

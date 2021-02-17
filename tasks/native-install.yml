@@ -1,0 +1,64 @@
+---
+- name: Install required packages in Debian derivatives
+  apt:
+    name: "{{ pdns_admin__packages }}"
+    state: present
+    update_cache: true
+
+- name: Create "{{ pdns_admin__root_path }}" directory
+  file:
+    path: "{{ pdns_admin__root_path }}"
+    state: directory
+
+- name: Git clone PowerDNS Admin
+  git:
+    repo: "{{ pdns_admin__git_repo_url }}"
+    dest: "{{ pdns_admin__path }}"
+    force: true
+
+- name: Install virtualenv
+  apt:
+    name: python3-virtualenv
+
+- name: PIP install requirements for PowerDNS Admin
+  pip:
+    requirements: "{{ pdns_admin__requirements_path }}"
+    virtualenv: "{{ pdns_admin__python_venv_path }}"
+    virtualenv_python: python3.7
+- name: Copy {{ pdns_admin__conf_filename }}
+  template:
+    src: "{{ pdns_admin__conf_template_filename }}"
+    dest: "{{ pdns_admin__conf_filepath }}"
+    owner: root
+    group: root
+  notify: Restart Powerdns Admin Service
+  tags:
+    - pdns-admin-config
+
+- name: Set up the flask installation
+  shell: >
+    cd {{ pdns_admin__path }};
+    source {{ pdns_admin__python_venv_path }}/bin/activate;
+    export FLASK_APP={{ pdns_admin__path }}/powerdnsadmin/__init__.py;
+    export FLASK_CONF={{ pdns_admin__conf_filepath }};
+    {{ pdns_admin__python_venv_path }}/bin/flask db upgrade;
+    yarnpkg install --pure-lockfile;
+    {{ pdns_admin__python_venv_path }}/bin/flask assets build;
+  register: tmpout
+
+- debug:
+    msg: "{{ tmpout }}"
+
+- name: Drop PowerDNS Admin systemd file
+  template:
+    src: "{{ pdns_admin__systemd_template_filename }}"
+    dest: "{{ pdns_admin__systemd_filepath }}"
+    owner: root
+    group: root
+
+- name: Make PowerDNS Admin as service
+  systemd:
+    name: "{{ pdns_admin__systemd_filename }}"
+    state: restarted
+    enabled: true
+    daemon_reload: true

@@ -1,17 +1,14 @@
+---
 galaxy_info:
   author: Natthaphon Phoonsookserm
   description: Ansible role to install PowerDNS Admin
   license: MIT
   min_ansible_version: 2.2
   platforms:
-  - name: EL
-    versions:
-    - 7
-  - name: Ubuntu
-    versions:
-    - trusty
-    - xenial
+    - name: Debian
+      versions:
+        - 11
+        - 10
   galaxy_tags:
     - powerdns
     - powerdns-admin
-dependencies: []

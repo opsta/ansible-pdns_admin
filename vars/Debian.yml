@@ -1,0 +1,24 @@
+---
+pdns_admin__packages:
+  - curl
+  - git
+  - python
+  - python-configparser
+  - libpython3.7
+  - python3-dev
+  - libsasl2-dev
+  - build-essential
+  - libmariadb3
+  - libssl-dev
+  - libldap2-dev
+  - libmariadbclient-dev-compat
+  - libxmlsec1-dev
+  - pkg-config
+  - yarnpkg
+  - python3-pip
+  - virtualenv
+
+pdns_admin__default_docker_packages:
+  - python3-docker
+  - docker-compose
+  - docker

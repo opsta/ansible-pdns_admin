@@ -1,0 +1,22 @@
+---
+- name: Create the pdns-admin MySQL databases
+  mysql_db:
+    login_user: "{{ pdns_admin__database_credentials['priv_user'] }}"
+    login_password: "{{ pdns_admin__database_credentials['priv_password'] }}"
+    login_host: "{{ pdns_admin__database_credentials['priv_host'] }}"
+    login_port: "{{ pdns_admin__database_config['sqla_db_port'] | default('3306') }}"
+    name: "{{ pdns_admin__database_config['sqla_db_name'] }}"
+    state: present
+
+- name: Grant pdns-admin access to the MySQL databases
+  mysql_user:
+    login_user: "{{ pdns_admin__database_credentials['priv_user'] }}"
+    login_password: "{{ pdns_admin__database_credentials['priv_password'] }}"
+    login_host: "{{ pdns_admin__database_credentials['priv_host'] }}"
+    login_port: "{{ pdns_admin__database_config['sqla_db_port'] | default('3306') }}"
+    name: "{{ pdns_admin__database_config['sqla_db_user'] }}"
+    password: "{{ pdns_admin__database_config['sqla_db_password'] }}"
+    host: "{{ pdns_admin__database_config['sqla_user_loginhost'] }}"
+    priv: "{{ pdns_admin__database_config['sqla_db_name'] }}.*:ALL"
+    append_privs: true
+    state: present
