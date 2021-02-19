@@ -25,6 +25,7 @@
     requirements: "{{ pdns_admin__requirements_path }}"
     virtualenv: "{{ pdns_admin__python_venv_path }}"
     virtualenv_python: python3.7
+
 - name: Copy {{ pdns_admin__conf_filename }}
   template:
     src: "{{ pdns_admin__conf_template_filename }}"

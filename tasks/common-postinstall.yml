@@ -1,22 +1,50 @@
 ---
-- name: Create the pdns-admin MySQL databases
-  mysql_db:
-    login_user: "{{ pdns_admin__database_credentials['priv_user'] }}"
-    login_password: "{{ pdns_admin__database_credentials['priv_password'] }}"
-    login_host: "{{ pdns_admin__database_credentials['priv_host'] }}"
-    login_port: "{{ pdns_admin__database_config['sqla_db_port'] | default('3306') }}"
-    name: "{{ pdns_admin__database_config['sqla_db_name'] }}"
-    state: present
 
-- name: Grant pdns-admin access to the MySQL databases
-  mysql_user:
-    login_user: "{{ pdns_admin__database_credentials['priv_user'] }}"
-    login_password: "{{ pdns_admin__database_credentials['priv_password'] }}"
-    login_host: "{{ pdns_admin__database_credentials['priv_host'] }}"
-    login_port: "{{ pdns_admin__database_config['sqla_db_port'] | default('3306') }}"
-    name: "{{ pdns_admin__database_config['sqla_db_user'] }}"
-    password: "{{ pdns_admin__database_config['sqla_db_password'] }}"
-    host: "{{ pdns_admin__database_config['sqla_user_loginhost'] }}"
-    priv: "{{ pdns_admin__database_config['sqla_db_name'] }}.*:ALL"
-    append_privs: true
-    state: present
+- name:  MySQL database handling
+  block:
+    - name: Create the pdns-admin MySQL databases
+      mysql_db:
+        login_user: "{{ pdns_admin__database_credentials['priv_user'] }}"
+        login_password: "{{ pdns_admin__database_credentials['priv_password'] }}"
+        login_host: "{{ pdns_admin__database_credentials['priv_host'] }}"
+        login_port: "{{ pdns_admin__database_config['sqla_db_port'] | default('3306') }}"
+        name: "{{ pdns_admin__database_config['sqla_db_name'] }}"
+        state: present
+    
+    - name: Grant pdns-admin access to the MySQL databases
+      mysql_user:
+        login_user: "{{ pdns_admin__database_credentials['priv_user'] }}"
+        login_password: "{{ pdns_admin__database_credentials['priv_password'] }}"
+        login_host: "{{ pdns_admin__database_credentials['priv_host'] }}"
+        login_port: "{{ pdns_admin__database_config['sqla_db_port'] | default('3306') }}"
+        name: "{{ pdns_admin__database_config['sqla_db_user'] }}"
+        password: "{{ pdns_admin__database_config['sqla_db_password'] }}"
+        host: "{{ pdns_admin__database_config['sqla_user_loginhost'] }}"
+        priv: "{{ pdns_admin__database_config['sqla_db_name'] }}.*:ALL"
+        append_privs: true
+        state: present 
+  when: pdns_admin__sqlite_db_file is not defined
+
+- name: sqlite installation and db file creation
+  block:
+    - name: Install the SQLite dependencies on RedHat
+      package:
+        name: sqlite
+        state: present
+      when: ansible_os_family == 'RedHat'
+    
+    - name: Install the SQLite dependencies on Debian
+      package:
+        name: sqlite3
+        state: present
+      when: ansible_os_family == 'Debian'
+    
+    - name: Ensure that the directories containing the PowerDNS Admin SQLite databases exist
+      file:
+        name: "{{ item | dirname }}"
+        owner: "root"
+        group: "root"
+        state: directory
+        mode: 0750
+      with_items: "{{ pdns_admin__sqlite_db_file }}"
+  when: pdns_admin__sqlite_db_file is defined

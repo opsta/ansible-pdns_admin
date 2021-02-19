@@ -29,7 +29,6 @@ UPLOAD_DIR = os.path.join(basedir, 'upload')
 
 {% if pdns_admin__database_config is defined %}
 {% for key, value in pdns_admin__database_config.items() %}
-{% if key | upper not in ["SQLALCHEMY_DATABASE_URI", "SQLALCHEMY_MIGRATE_REPO"] %}
 {% if value is not mapping %}
 {% if value is sequence and value is not string %}
 {% if value[0] is number %}
@@ -45,15 +44,8 @@ UPLOAD_DIR = os.path.join(basedir, 'upload')
 {% endif %}
 {% endif %}
 {% endif %}
-{% endif %}
 {% endfor %}
-#MySQL
-SQLALCHEMY_DATABASE_URI = 'mysql://'+SQLA_DB_USER+':'\
-    +SQLA_DB_PASSWORD+'@'+SQLA_DB_HOST+'/'+SQLA_DB_NAME
-#SQLite
-SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 {% endif %}
-
 
 {% if pdns_admin__external_auth_config is defined %}
 {% for auth in pdns_admin__external_auth_config.values() %}
