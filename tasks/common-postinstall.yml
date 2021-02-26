@@ -23,7 +23,7 @@
         priv: "{{ pdns_admin__database_config['sqla_db_name'] }}.*:ALL"
         append_privs: true
         state: present 
-  when: pdns_admin__sqlite_db_file is not defined
+  when: pdns_admin__sqlite_db_file is undefined
 
 - name: sqlite installation and db file creation
   block:
