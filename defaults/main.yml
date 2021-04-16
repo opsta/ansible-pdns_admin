@@ -57,7 +57,7 @@ pdns_admin__database_config:
   sqlalchemy_migrate_repo: "{{ 'os.path.join(basedir, 'db_repository')' if pdns_admin__database_config['sqlalchemy_database_uri'] is search('sqlite') }}"
   sqlalchemy_track_modifications: true
 
-pdns_admin__sqlite_db_file: "{{ '/var/lib/pdns-admin/pdns-admin.sql' if pdns_admin__database_config['sqlalchemy_database_uri'] is search('sqlite') }}"
+pdns_admin__sqlite_db_file: "'{{ pdns_admin__path }}/powerdnsadmin/pdns-admin.sql' if pdns_admin__database_config['sqlalchemy_database_uri'] is search('sqlite') }}"
 
 pdns_admin__main_config:
   # powerdns config

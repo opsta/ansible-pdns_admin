@@ -45,6 +45,6 @@
         owner: "root"
         group: "root"
         state: directory
-        mode: 0750
+        mode: 0770
       with_items: "{{ pdns_admin__sqlite_db_file }}"
   when: pdns_admin__sqlite_db_file is defined
