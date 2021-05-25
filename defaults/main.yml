@@ -1,27 +1,38 @@
 ---
-pdns_admin_service_name: powerdns
-pdns_admin_git_repo_url: https://github.com/ngoduykhanh/PowerDNS-Admin.git
-pdns_admin_pip_packages:
-  - mysql-python
+# install mode
+pdns_admin__install_mode: docker
 
-pdns_admin_root_path: /var/www
-pdns_admin_path: "{{ pdns_admin_root_path }}/powerdns-admin"
-pdns_admin_requirements_path: "{{ pdns_admin_path }}/requirements.txt"
+# for native installations
+pdns_admin__service_name: powerdns-admin
+pdns_admin__git_repo_url: https://github.com/ngoduykhanh/PowerDNS-Admin.git
+pdns_admin__pip_packages: ~
+pdns_admin__root_path: /var/www
+pdns_admin__path: "{{ pdns_admin__root_path }}/powerdns-admin"
+pdns_admin__requirements_path: "{{ pdns_admin__path }}/requirements.txt"
 
-pdns_admin_conf_filename: config.py
-pdns_admin_conf_template_filename: "{{ pdns_admin_conf_filename }}.j2"
-pdns_admin_conf_filepath: "{{ pdns_admin_path }}/{{ pdns_admin_conf_filename }}"
+pdns_admin__conf_filename: default_config.py
+pdns_admin__conf_template_filename: config.py.j2
+pdns_admin__conf_filepath: "{{ pdns_admin__path }}/powerdnsadmin/{{ pdns_admin__conf_filename }}"
 
-pdns_admin_systemd_filename: powerdns-admin.service
-pdns_admin_systemd_template_filename: "{{ pdns_admin_systemd_filename }}.j2"
-pdns_admin_systemd_filepath: "/etc/systemd/system/{{ pdns_admin_systemd_filename }}"
+pdns_admin__systemd_filename: powerdns-admin.service
+pdns_admin__systemd_template_filename: "{{ pdns_admin__systemd_filename }}.j2"
+pdns_admin__systemd_filepath: "/etc/systemd/system/{{ pdns_admin__systemd_filename }}"
 
-pdns_admin_python_venv_path: /opt/vens/powerdns
-pdns_admin_python_path: "{{ pdns_admin_python_venv_path }}/bin/python"
+pdns_admin__python_venv_path: /opt/vens/powerdns
+pdns_admin__python_path: "{{ pdns_admin__python_venv_path }}/bin/python"
 
-#TODO merge all configuration
-#TODO union configuration
-pdns_admin_global_config:
+# for docker installations
+pdns_admin__docker_packages: "{{ pdns_admin__default_docker_packages }}"
+pdns_admin__docker_compose_dir: '/opt/docker-compose/pdns-admin'
+pdns_admin__image_name: "ngoduykhanh/powerdns-admin"
+pdns_admin__container_name: pdns-admin
+
+# PDNS-admin config
+pdns_admin__listen_port: 9393
+pdns_admin__listen_ip: 127.0.0.1
+pdns_admin__workers: 4
+
+pdns_admin__global_config:
   wtf_csrf_enabled: true
   secret_key: CHANGEME
   bind_address: 0.0.0.0
@@ -32,55 +43,23 @@ pdns_admin_global_config:
   log_level: DEBUG
   log_file: pdns-admin.log
   # For Docker, leave empty string
-  #log_file: ''
-  #default auth
+  # log_file: ''
+  # default auth
   basic_enabled: true
   signup_enabled: true
 
-pdns_admin_database_config:
-  # DATABASE CONFIG
-  #You'll need MySQL-python
+pdns_admin__database_config:
   sqla_db_user: pdns-admin
   sqla_db_password: CHANGEME
-  sqla_db_host: your-db-server
   sqla_db_name: pdns-admin
-  #sqlite
-  #sqlalchemy_database_uri: 'sqlite:////path/to/your/pdns.db'
+  sqlalchemy_database_uri: "{{ 'mysql://'+sqla_db_user+':'+sqla_db_password+'@'+sqla_db_host+'/'+sqla_db_name }}"
+  # only used if using sqlite database in sqlalchemy_database_uri
+  sqlalchemy_migrate_repo: "{{ 'os.path.join(basedir, 'db_repository')' if pdns_admin__database_config['sqlalchemy_database_uri'] is search('sqlite') }}"
   sqlalchemy_track_modifications: true
 
-# pdns_admin_external_auth_config:
-#   ldap:
-#     # ldap config
-#     ldap_type: ldap
-#     ldap_uri: ldaps://your-ldap-server:636
-#     ldap_username: cn=dnsuser,ou=users,ou=services,dc=duykhanh,dc=me
-#     ldap_password: dnsuser
-#     ldap_search_base: ou=system admins,ou=people,dc=duykhanh,dc=me
-#     # additional options only if ldap_type=ldap
-#     ldap_usernamefield: uid
-#     ldap_filter: (objectclass=inetorgperson)
-#     # ad:
-#     #   # ad config
-#     #   ldap_type: 'ad'
-#     #   ldap_uri: 'ldaps://your-ad-server:636'
-#     #   ldap_username: 'cn=dnsuser,ou=users,dc=domain,dc=local'
-#     #   ldap_password: 'dnsuser'
-#     #   ldap_search_base: 'dc=domain,dc=local'
-#     #   # you may prefer 'userprincipalname' instead
-#     #   ldap_usernamefield: 'samaccountname'
-#     #   # ad group that you would like to have accesss to web app
-#     #   ldap_filter: 'memberof=cn=dns_users,ou=groups,dc=domain,dc=local'
-#   github:
-#     # github oauth
-#     github_oauth_enable: false
-#     github_oauth_key: CHANGEME
-#     github_oauth_secret: CHANGEME
-#     github_oauth_scope: email
-#     github_oauth_url: http://127.0.0.1:5000/api/v3/
-#     github_oauth_token: http://127.0.0.1:5000/oauth/token
-#     github_oauth_authorize: http://127.0.0.1:5000/oauth/authorize
+pdns_admin__sqlite_db_file: "'{{ pdns_admin__path }}/powerdnsadmin/pdns-admin.sql' if pdns_admin__database_config['sqlalchemy_database_uri'] is search('sqlite') }}"
 
-pdns_admin_main_config:
+pdns_admin__main_config:
   # powerdns config
   pdns_stats_url: http://pdns-stat-ip:8081
   pdns_api_key: CHANGEME

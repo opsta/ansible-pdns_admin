@@ -1,0 +1,22 @@
+# {{ ansible_managed }}
+---
+version: '2'
+services:
+  pdns-admin:
+    image: {{ pdns_admin__image_name }}
+    container_name: {{ pdns_admin__container_name }}
+    ports:
+      - {{ pdns_admin__listen_ip }}:{{ pdns_admin__listen_port }}:80/tcp
+    hostname: pdns-admin
+    environment:
+      SQLALCHEMY_DATABASE_URI: "mysql://{{ pdns_admin__database_config['sqla_db_user'] }}:{{ pdns_admin__database_config['sqla_db_password'] }}@172.16.0.1/{{ pdns_admin__database_config['sqla_db_name'] }}"
+    networks:
+      pdnsa_net:
+        ipv4_address: 172.16.0.2
+networks:
+  pdnsa_net:
+    ipam:
+      config:
+        - subnet: 172.16.0.0/24
+          gateway: 172.16.0.1
+

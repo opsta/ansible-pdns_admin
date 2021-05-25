@@ -1,3 +1,14 @@
 ---
-- include: powerdns_install.yml
-- include: powerdns_post.yml
+- name: Add the OS specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+- name: Make sure installation mode is set
+  assert:
+    that:
+      - pdns_admin__install_mode is defined
+      - pdns_admin__install_mode is in pdns_admin__supported_install_modes
+- name: "Include installation tasks for {{ pdns_admin__install_mode }}"
+  include: "{{ pdns_admin__install_mode }}-install.yml"
+- name: "Include common tasks after installation (e.g. database connection)"
+  include: common-postinstall.yml
+- name: flush handlers
+  meta: flush_handlers

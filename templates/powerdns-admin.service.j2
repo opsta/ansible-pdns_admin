@@ -1,14 +1,16 @@
 [Unit]
 Description=PowerDNS-Admin
 After=network-online.target
+
 [Service]
-Type=simple
 User=root
 Group=root
-ExecStart={{ pdns_admin_python_path }} {{pdns_admin_path}}/run.py
-WorkingDirectory={{ pdns_admin_path }}
-Environment="PATH={{ pdns_admin_path }}"
-Restart=always
+PIDFile=/run/powerdns-admin.pid
+ExecStart={{ pdns_admin__python_venv_path }}/bin/gunicorn --pid /run/powerdnsadmin.pid --bind {{pdns_admin__listen_ip}}:{{pdns_admin__listen_port}} -w {{ pdns_admin__workers }}  'powerdnsadmin:create_app()'
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+WorkingDirectory={{ pdns_admin__path }}
+Restart=unless-stopped
 
 [Install]
 WantedBy=multi-user.target

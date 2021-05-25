@@ -1,5 +1,5 @@
 ---
-pdns_admin_packages:
+pdns_admin__packages:
   - curl
   - git
   - python

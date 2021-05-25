@@ -1,3 +1,6 @@
 ---
+pdns_admin__supported_install_modes:
+  - docker
+  - native
 env:
- RUNLEVEL: 1
+  RUNLEVEL: 1
